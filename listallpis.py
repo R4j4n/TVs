@@ -35,7 +35,7 @@ def scan_network_for_pis() -> Dict[str, str]:
         for host in scanner.all_hosts():
             try:
                 hostname = socket.gethostbyaddr(host)[0].lower()
-                if "pi" in hostname:
+                if "rajan" in hostname:
                     print(f"Found : {hostname}")
                     pi_devices[mapp_oakville[hostname]] = host
 
