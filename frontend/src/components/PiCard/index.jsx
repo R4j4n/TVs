@@ -12,7 +12,7 @@ export function PiCard({ pi }) {
   const { status, error, refreshStatus } = useStatus(pi.host)
 
   return (
-    <CardWrapper pi={pi} error={error} onRefresh={refreshStatus}>
+    <CardWrapper pi={pi} status={status} error={error} onRefresh={refreshStatus}>
       <VideoPreview host={pi.host} isPlaying={status?.is_playing} />
       <VideoControls
         host={pi.host}

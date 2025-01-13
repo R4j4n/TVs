@@ -3,16 +3,20 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { RefreshCw } from 'lucide-react'
 
-export function CardWrapper({ pi, error, onRefresh, children }) {
+export function CardWrapper({ pi, status, error, onRefresh, children }) {
+
+
   return (
     <Card className="w-full">
       <CardHeader className="space-y-1">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-2xl font-bold">{pi.name}</CardTitle>
-          <Button 
+        <div className="flex items-center justify-between overflow-hidden">
+          <CardTitle className="w-1/2 text-xl font-bold">{pi.name}  </CardTitle>
+          {status &&  <div className="w-1/4 text-center text-slate-200 justify-end h-100% rounded-full bg-emerald-600 ">Active</div>
+          }<Button 
             variant="ghost" 
             size="icon"
             onClick={onRefresh}
+            className="w-1/4"
           >
             <RefreshCw className="h-4 w-4" />
           </Button>
