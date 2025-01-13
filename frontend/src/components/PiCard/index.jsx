@@ -24,7 +24,9 @@ export function PiCard({ pi }) {
       <VideoList
         host={pi.host}
         videos={status?.available_videos || []}
+        uploaded_on = { status?.date_uploaded || []}
         onAction={refreshStatus}
+        current_video = {status?.current_video}
       />
     </CardWrapper>
   )

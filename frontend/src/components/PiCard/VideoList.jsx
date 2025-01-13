@@ -3,8 +3,13 @@ import { Button } from "@/components/ui/button";
 import { playVideo, deleteVideo } from "@/lib/api";
 import { useState } from "react";
 
-export function VideoList({ host, videos, onAction }) {
+export function VideoList({ host, videos, uploaded_on, onAction, current_video }) {
   const [isExpanded, setIsExpanded] = useState(false);
+
+  const videoMap = videos.reduce((map, video, index) => {
+    map[video] = uploaded_on[index];
+    return map;
+  }, {});
 
   const handleDelete = async (videoName) => {
     if (!confirm(`Are you sure you want to delete ${videoName}?`)) return;
@@ -38,9 +43,9 @@ export function VideoList({ host, videos, onAction }) {
           {videos.map((video) => (
             <div
               key={video}
-              className="flex items-center justify-between p-2 bg-gray-50 rounded-lg"
+              className={`flex items-center justify-between p-2 ${video===current_video ?  "bg-gradient-to-t from-emerald-800 to-emerald-600 text-slate-200" : "bg-gray-100"} rounded-lg`}
             >
-              <span className="text-sm truncate flex-1">{video}</span>
+              <span className="text-sm truncate flex-1"> {video} <br/>  <span className= {"text-xs"}>Upload: { videoMap[video] }</span> </span>
               <div className="flex gap-2">
                 <Button
                   variant="ghost"
