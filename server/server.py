@@ -14,12 +14,15 @@ import numpy as np
 import uvicorn
 import vlc
 from fastapi import FastAPI, File, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from PIL import Image
 from pydantic import BaseModel
 from zeroconf import ServiceInfo
 from zeroconf.asyncio import AsyncZeroconf
+
+from routers.control_tv import app as tv_turn_on_off
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -147,7 +150,7 @@ class VideoServer:
 
 # FastAPI application
 app = FastAPI()
-from fastapi.middleware.cors import CORSMiddleware
+app.include_router(tv_turn_on_off, tags=["TV Schedule APIs"])
 
 app.add_middleware(
     CORSMiddleware,
