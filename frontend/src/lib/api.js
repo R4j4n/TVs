@@ -40,3 +40,20 @@ export async function fetchPis(host) {
   if (!response.ok) throw new Error("Failed to fetch Pis");
   return response.json();
 }
+
+
+export async function getSchedule(host) {
+  const response = await fetch(`http://${host}:8000/tv/get_schedule`);
+  if (!response.ok) throw new Error("Failed to fetch the schedule");
+  return response.json();
+}
+
+
+export async function saveSchedule(host, schedule) {
+  const response = await fetch(`http://${host}:8000/tv/set_schedule`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(schedule)
+  })
+  if (!response.ok) throw new Error('Failed to save schedule')
+}
