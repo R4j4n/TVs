@@ -1,18 +1,24 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { CardWrapper } from './CardWrapper'
-import { VideoPreview } from './VideoPreview'
-import { VideoControls } from './VideoControls'
-import { VideoList } from './VideoList'
-import { useStatus } from '@/hooks/useStatus'
+import { useState } from "react";
+import { CardWrapper } from "./CardWrapper";
+import { VideoPreview } from "./VideoPreview";
+import { VideoControls } from "./VideoControls";
+import { VideoList } from "./VideoList";
+import { useStatus } from "@/hooks/useStatus";
+import Schedule from "./Schedule";
 
 export function PiCard({ pi }) {
-  const [uploading, setUploading] = useState(false)
-  const { status, error, refreshStatus } = useStatus(pi.host)
+  const [uploading, setUploading] = useState(false);
+  const { status, error, refreshStatus } = useStatus(pi.host);
 
   return (
-    <CardWrapper pi={pi} error={error} onRefresh={refreshStatus}>
+    <CardWrapper
+      pi={pi}
+      status={status}
+      error={error}
+      onRefresh={refreshStatus}
+    >
       <VideoPreview host={pi.host} isPlaying={status?.is_playing} />
       <VideoControls
         host={pi.host}
@@ -24,8 +30,11 @@ export function PiCard({ pi }) {
       <VideoList
         host={pi.host}
         videos={status?.available_videos || []}
+        uploaded_on={status?.date_uploaded || []}
         onAction={refreshStatus}
+        current_video={status?.current_video}
       />
+      <Schedule host={pi.host} />
     </CardWrapper>
-  )
+  );
 }
