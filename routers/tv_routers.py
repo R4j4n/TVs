@@ -38,8 +38,7 @@ def get_pis():
     """
     Returns the list of discovered Raspberry Pis in JSON format.
     """
-    # return discovery.get_pis()
-    return {
+    return [
         {"name": "Living Room Pi", "host": "10.51.213.217"},
         {"name": "Gay TV", "host": "69.69.69.69"},
-    }
+    ]
