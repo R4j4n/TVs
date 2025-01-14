@@ -41,19 +41,33 @@ export async function fetchPis(host) {
   return response.json();
 }
 
-
 export async function getSchedule(host) {
-  const response = await fetch(`http://${host}:8000/tv/get_schedule`);
-  if (!response.ok) throw new Error("Failed to fetch the schedule");
-  return response.json();
+  try {
+    const response = await fetch(`http://${host}:8000/tv/get_schedule`);
+    if (!response.ok) throw new Error("Failed to fetch the schedule");
+    return response.json();
+  } catch {
+    console.log("Failed to fetch the schedule. . . .");
+  }
 }
-
 
 export async function saveSchedule(host, schedule) {
   const response = await fetch(`http://${host}:8000/tv/set_schedule`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(schedule)
-  })
-  if (!response.ok) throw new Error('Failed to save schedule')
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(schedule),
+  });
+  if (!response.ok) throw new Error("Failed to save schedule");
+}
+
+export async function deleteSchedule(host) {
+  try {
+    const response = await fetch(`http://${host}:8000/tv/delete_schedule`, {
+      method: "DELETE",
+    });
+    if (!response.ok) throw new Error("Failed to delete the schedule");
+    return response.json();
+  } catch {
+    console.log("Failed to delete the schedule. . . .");
+  }
 }

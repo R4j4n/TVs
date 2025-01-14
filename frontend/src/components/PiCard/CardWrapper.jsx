@@ -7,7 +7,7 @@ export function CardWrapper({ pi, status, error, onRefresh, children }) {
 
 
   return (
-    <Card className="w-full drop-shadow-lg">
+    <Card className={`w-full drop-shadow-lg ${!status? 'bg-red-400/20': ''} hover:drop-shadow-xl `}>
       <CardHeader className="space-y-1">
         <div className="flex items-center justify-between overflow-hidden">
           <CardTitle className="w-1/2 text-xl font-bold">{pi.name}  </CardTitle>

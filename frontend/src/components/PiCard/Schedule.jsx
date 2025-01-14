@@ -2,7 +2,7 @@
 
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useState, useEffect } from "react";
-import { getSchedule, saveSchedule } from "@/lib/api";
+import { deleteSchedule, getSchedule, saveSchedule } from "@/lib/api";
 
 const daysOfWeek = [
   "sunday",
@@ -49,7 +49,18 @@ const Schedule = ({ host }) => {
       alert("Schedule saved successfully!");
     } catch (err) {
       console.error("Failed to save schedule:", err);
-      alert("Failed to save schedule");
+      // alert("Failed to save schedule");
+    }
+  };
+
+  const handleClear = async () => {
+    try {
+      await deleteSchedule(host);
+      console.log("Schedule removed successfully !!");
+      alert("Schedule cleared !!!");
+    } catch (err) {
+      console.error("Failed to clear schedule:", err);
+      // alert("Failed to clear schedule");
     }
   };
 
@@ -59,7 +70,7 @@ const Schedule = ({ host }) => {
         className="flex items-center justify-between cursor-pointer"
         onClick={() => setIsExpanded((prev) => !prev)}
       >
-        <p className="font-medium">Schedule</p>
+        <p className="font-medium">Schedule TV on and Off Time</p>
         {isExpanded ? (
           <ChevronUp className="h-4 w-4" />
         ) : (
@@ -68,17 +79,19 @@ const Schedule = ({ host }) => {
       </div>
 
       {isExpanded && (
-        <div className="pt-4 space-y-4">
+        <div className="pt-4 space-y-4 text-center">
           {loading ? (
             <p>Loading schedule...</p>
           ) : error ? (
             <p>{error}</p>
           ) : (
             daysOfWeek.map((day) => (
-              <div key={day} className="space-y-2">
-                <p className="font-medium capitalize">{day}</p>
-                <div className="flex items-center gap-4">
-                  <div>
+              <div key={day} className=" py-2">
+                <p className="font-lg font-bold capitalize text-center">
+                  {day}
+                </p>
+                <div className=" w-full  flex items-center justify-center gap-3">
+                  <div className="">
                     <input
                       type="time"
                       value={schedule[day]?.turn_on_time || ""}
@@ -89,9 +102,9 @@ const Schedule = ({ host }) => {
                     />
                   </div>
                   <div>
-                  <p>--</p>
+                    <p>-</p>
                   </div>
-                  <div>
+                  <div className="">
                     <input
                       type="time"
                       value={schedule[day]?.turn_off_time || ""}
@@ -105,12 +118,21 @@ const Schedule = ({ host }) => {
               </div>
             ))
           )}
-          <button
-            onClick={handleSave}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-          >
-            Save Schedule
-          </button>
+
+          <div className="flex flex-col justify-center items-center w-full gap-4">
+            <button
+              onClick={handleSave}
+              className="px-4 py-2 w-fit bg-gradient-to-b from-emerald-400 to-emerald-800 text-white rounded-md drop-shadow-lg hover:-translate-y-0.5 transition-all ease-in duration-400"
+            >
+              Save Schedule
+            </button>
+            <button
+              onClick={handleClear}
+              className="px-4 py-2 w-fit bg-gradient-to-b from-red-400 to-red-800 text-white rounded-md drop-shadow-lg hover:-translate-y-0.5 transition-all ease-in duration-400"
+            >
+              Clear Schedule
+            </button>
+          </div>
         </div>
       )}
     </div>
