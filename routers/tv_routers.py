@@ -1,10 +1,21 @@
+import asyncio
 import socket
-from typing import List
+import time
+from typing import Any, Dict, List
 
+import httpx
+import uvicorn
 from fastapi import APIRouter
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel
 from zeroconf import ServiceBrowser, ServiceStateChange, Zeroconf
 
-router = APIRouter()
+
+# Pydantic models for response validation
+class PiStatus(BaseModel):
+    error: str | None = None
+    status: Dict[str, Any] | None = None
 
 
 class PiDiscovery:
@@ -16,6 +27,8 @@ class PiDiscovery:
             "_pivideo._tcp.local.",
             handlers=[self.on_service_state_change],
         )
+        # Give initial time for discovery
+        time.sleep(2)
 
     def on_service_state_change(self, zeroconf, service_type, name, state_change):
         if state_change is ServiceStateChange.Added:
@@ -24,21 +37,48 @@ class PiDiscovery:
                 ip = socket.inet_ntoa(info.addresses[0])
                 hostname = info.properties.get(b"hostname", b"").decode("utf-8")
                 self.pis[hostname] = ip
+        elif state_change is ServiceStateChange.Removed:
+            # Remove the service when it's no longer available
+            for hostname, url in list(self.pis.items()):
+                if name.startswith(hostname):
+                    del self.pis[hostname]
 
     def get_pis(self):
-        # Convert the dictionary into a list of dictionaries
-        return [{"name": name, "host": host} for name, host in self.pis.items()]
+        return self.pis
+
+    def __del__(self):
+        self.zeroconf.close()
 
 
+# Create FastAPI app
+router = APIRouter()
+
+
+# Create global discovery instance
 discovery = PiDiscovery()
 
 
-@router.get("/pis", response_model=List[dict])
-def get_pis():
-    """
-    Returns the list of discovered Raspberry Pis in JSON format.
-    """
-    return [
-        {"name": "Living Room Pi", "host": "10.51.213.217"},
-        {"name": "Gay TV", "host": "69.69.69.69"},
-    ]
+@router.get("/", response_model=dict)
+async def root():
+    """Root endpoint returning service information"""
+    return {
+        "service": "Pi Discovery",
+        "status": "running",
+        "endpoints": ["/pis", "/refresh", "/status"],
+    }
+
+
+@router.get("/pis")
+async def get_pis():
+    """Get status of all discovered Pis"""
+    pi_statuses = []
+    current_pis = discovery.get_pis()
+
+    async with httpx.AsyncClient() as client:
+        for hostname, url in current_pis.items():
+            data = {}
+            if hostname != "":
+                data["name"] = hostname
+                data["host"] = url
+                pi_statuses.append(data)
+    return JSONResponse(pi_statuses)

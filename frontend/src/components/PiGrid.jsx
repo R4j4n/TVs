@@ -15,7 +15,7 @@ export function PiGrid() {
         {
           /** #TODO : provide the network hostname which is localhost */
         }
-        const result = await fetchPis("10.51.201.115")
+        const result = await fetchPis("localhost")
         // Ensure result is an array, if not, convert or handle accordingly
         setPis(Array.isArray(result) ? result : Object.values(result))
       } catch (err) {

@@ -1,0 +1,95 @@
+# Create the systemd service file 
+
+sudo nano /etc/systemd/system/tv-automation.service 
+ 
+Step2:  
+
+ 
+
+[Unit] 
+
+Description=TV Automation Script 
+
+After=network.target 
+
+ 
+
+[Service] 
+
+Type=simple 
+
+WorkingDirectory=/home/snackmain/automation 
+
+ExecStart=/home/snackmain/automation/venv/bin/python /home/snackmain/automation/tv.py 
+
+Restart=always 
+
+User=snackmain 
+
+ 
+
+[Install] 
+
+WantedBy=multi-user.target 
+
+ 
+ 
+
+Boilerplate:  
+
+ 
+
+[Unit] 
+
+Description=Your Python Script Service 
+
+After=network.target 
+
+ 
+
+[Service] 
+
+ExecStart=/home/pi/path/to/your/venv/bin/python /home/pi/path/to/your/script.py 
+
+WorkingDirectory=/home/pi/path/to/your/project 
+
+Restart=always 
+
+User=pi 
+
+ 
+
+[Install] 
+
+WantedBy=multi-user.target 
+
+ 
+
+ 
+
+ 
+Step 3:  
+
+ 
+
+# Reload systemd to recognize the new service 
+
+sudo systemctl daemon-reload 
+
+ 
+
+# Enable the service to start on boot 
+
+sudo systemctl enable tv-automation.service 
+
+ 
+
+# Start the service immediately 
+
+sudo systemctl start tv-automation.service  
+
+ 
+
+# Optional: Check the status to verify it's running 
+
+sudo systemctl status tv-automation.service 
