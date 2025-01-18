@@ -38,6 +38,17 @@ export async function deleteVideo(host, videoName) {
   if (!response.ok) throw new Error("Failed to delete video");
 }
 
+export async function loopVideo(host, loopEnable) {
+  const response = await fetch(`http://${host}:8000/loop`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ enabled: loopEnable }),
+  });
+  if (!response.ok) throw new Error("Failed to enable loop for video");
+}
+
+
+
 export async function uploadVideo(host, file) {
   const formData = new FormData();
   formData.append("file", file);

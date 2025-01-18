@@ -2,7 +2,7 @@
 
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useState, useEffect } from "react";
-import { deleteSchedule, getSchedule, saveSchedule } from "@/lib/api";
+import { deleteSchedule, getSchedule, loopVideo, saveSchedule } from "@/lib/api";
 
 const daysOfWeek = [
   "sunday",
@@ -14,7 +14,7 @@ const daysOfWeek = [
   "saturday",
 ];
 
-const Schedule = ({ host }) => {
+const Schedule = ({ host, isLooping }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [schedule, setSchedule] = useState({});
   const [loading, setLoading] = useState(true);
@@ -64,13 +64,23 @@ const Schedule = ({ host }) => {
     }
   };
 
+
+  const handleCheckboxChange = async () => {
+    try {
+      await loopVideo(host, !isLooping);
+
+    } catch (error) {
+      console.log("Failed to set loop. . . ", error)
+    }
+  }
+
   return (
     <div className="space-y-2">
       <div
         className="flex items-center justify-between cursor-pointer"
         onClick={() => setIsExpanded((prev) => !prev)}
       >
-        <p className="font-medium">Schedule TV on and Off Time</p>
+        <p className="font-medium">Advanced Settings</p>
         {isExpanded ? (
           <ChevronUp className="h-4 w-4" />
         ) : (
@@ -80,17 +90,32 @@ const Schedule = ({ host }) => {
 
       {isExpanded && (
         <div className="pt-4 space-y-4 text-center">
+          
+        <label className="flex items-center">
+        <input
+          type="checkbox"
+          checked={isLooping}
+              onChange={()=> handleCheckboxChange()}
+          className="mr-2"
+        />
+        <span className="font-semibold">Loop video</span>
+      </label>
+          
+          
+          
+          <h1>TV on/off Schedule</h1>
           {loading ? (
             <p>Loading schedule...</p>
           ) : error ? (
             <p>{error}</p>
           ) : (
             daysOfWeek.map((day) => (
-              <div key={day} className=" py-2">
-                <p className="font-lg font-bold capitalize text-center">
-                  {day}
-                </p>
-                <div className=" w-full  flex items-center justify-center gap-3">
+              <div
+                key={day}
+                className="flex items-center justify-start w-full gap-4 py-1"
+              >
+                <p className="font-lg font-bold capitalize w-1/5 ">{day.slice(0,3)}: {" "} </p>
+                <div className="flex w-full items-center justify-center text-center gap-1 ">
                   <div className="">
                     <input
                       type="time"
@@ -98,7 +123,7 @@ const Schedule = ({ host }) => {
                       onChange={(e) =>
                         handleChange(day, "turn_on_time", e.target.value)
                       }
-                      className="border rounded-md p-2"
+                      className="border text-sm rounded-md"
                     />
                   </div>
                   <div>
@@ -111,7 +136,7 @@ const Schedule = ({ host }) => {
                       onChange={(e) =>
                         handleChange(day, "turn_off_time", e.target.value)
                       }
-                      className="border rounded-md p-2"
+                      className="border text-sm rounded-md"
                     />
                   </div>
                 </div>

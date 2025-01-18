@@ -34,8 +34,9 @@ export function PiCard({ pi }) {
         onAction={refreshStatus}
         current_video={status?.current_video}
         isPlaying={status?.is_playing}
+        
       />
-      <Schedule host={pi.host} />
+      <Schedule host={pi.host} isLooping = {status?.is_looping} />
     </CardWrapper>
   );
 }
