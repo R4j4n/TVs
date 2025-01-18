@@ -33,6 +33,7 @@ export function PiCard({ pi }) {
         uploaded_on={status?.date_uploaded || []}
         onAction={refreshStatus}
         current_video={status?.current_video}
+        isPlaying={status?.is_playing}
       />
       <Schedule host={pi.host} />
     </CardWrapper>

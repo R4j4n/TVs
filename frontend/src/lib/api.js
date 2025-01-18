@@ -13,6 +13,19 @@ export async function playVideo(host, videoName) {
   if (!response.ok) throw new Error("Failed to play video");
 }
 
+
+export async function pauseVideo(host) {
+  const response = await fetch(`http://${host}:8000/pause`, { method: "POST" });
+  if (!response.ok) throw new Error("Failed to pause video");
+}
+
+
+export async function resumeVideo(host) {
+  const response = await fetch(`http://${host}:8000/resume`, { method: "POST" });
+  if (!response.ok) throw new Error("Failed to resume video");
+}
+
+
 export async function stopVideo(host) {
   const response = await fetch(`http://${host}:8000/stop`, { method: "POST" });
   if (!response.ok) throw new Error("Failed to stop video");
@@ -71,3 +84,5 @@ export async function deleteSchedule(host) {
     console.log("Failed to delete the schedule. . . .");
   }
 }
+
+
