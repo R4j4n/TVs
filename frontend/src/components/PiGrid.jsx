@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { PiCard } from "./PiCard";
 import { fetchPis } from "@/lib/api";
 
+
+
 export function PiGrid() {
 
   const [pis, setPis] = useState([])  // Array to store the results
@@ -12,10 +14,7 @@ export function PiGrid() {
   useEffect(() => {
     async function loadPis() {
       try {
-        {
-          /** #TODO : provide the network hostname which is localhost */
-        }
-        const result = await fetchPis("localhost")
+        const result = await fetchPis(process.env.NEXT_PUBLIC_ACTIVE_SERVER_HOSTNAME)
         // Ensure result is an array, if not, convert or handle accordingly
         setPis(Array.isArray(result) ? result : Object.values(result))
       } catch (err) {

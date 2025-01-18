@@ -37,7 +37,7 @@ export async function uploadVideo(host, file) {
 
 export async function fetchPis(host) {
   const response = await fetch(`http://${host}:7777/pis`);
-  if (!response.ok) throw new Error("Failed to fetch Pis");
+  if (!response.ok)  throw new Error("Failed to fetch Pis, received ");
   return response.json();
 }
 
