@@ -4,30 +4,25 @@ import json
 import logging
 import os
 import socket
+import subprocess
 import threading
 import time
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Optional
 
-import cv2  # Added OpenCV for video capture and streaming
-import numpy as np
 import uvicorn
 import vlc
 from fastapi import FastAPI, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
-from fastapi.staticfiles import StaticFiles
 from PIL import Image
 from pydantic import BaseModel
-from zeroconf import ServiceInfo
-from zeroconf.asyncio import AsyncZeroconf
-
-from routers.control_tv import tv_controller
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+from routers.control_tv import tv_controller
 
 
 class VideoServer:
@@ -35,19 +30,24 @@ class VideoServer:
         self.video_dir = Path(video_dir)
         self.video_dir.mkdir(exist_ok=True)
 
-        # Initialize VLC instance
+        # Initialize VLC instance for playback only
         self.vlc_instance = vlc.Instance()
         self.player = self.vlc_instance.media_player_new()
 
         # Server state
         self.current_video: Optional[str] = None
+        self.current_video_path: Optional[Path] = None
         self.is_playing: bool = False
         self.last_played_file = Path("last_played.json")
 
-        # Initialize preview lock
+        # Preview state
+        self.preview_frame = None
         self.preview_lock = threading.Lock()
+        self.preview_process = None
+        self.preview_pipe = None
+        self.frame_count = 0  # Add counter for debugging
 
-        # Start video capture thread
+        # Start preview capture thread
         self.preview_thread = threading.Thread(
             target=self._capture_preview, daemon=True
         )
@@ -62,29 +62,116 @@ class VideoServer:
             vlc.EventType.MediaPlayerEndReached, self._restart_video
         )
 
-    def _restart_video(self, event):
-        """Restart the video when it ends."""
-        logger.info(f"Restarting video: {self.current_video}")
-        if self.current_video:
-            self.play_video(self.current_video)
+    def _start_ffmpeg_process(self):
+        """Start FFmpeg process for preview capture."""
+        if self.preview_process:
+            logger.debug("Terminating existing FFmpeg process")
+            self.preview_process.terminate()
+            self.preview_process.wait()
+
+        if not self.current_video_path or not self.is_playing:
+            logger.debug("No video playing, skipping FFmpeg start")
+            return
+
+        try:
+            logger.debug(f"Starting FFmpeg process for {self.current_video_path}")
+            command = [
+                "ffmpeg",
+                "-i",
+                str(self.current_video_path),
+                "-f",
+                "image2pipe",
+                "-pix_fmt",
+                "rgb24",
+                "-vf",
+                "fps=10,scale=320:-1",  # Increased FPS and maintained aspect ratio
+                "-vcodec",
+                "png",
+                "-preset",
+                "ultrafast",  # Added for faster encoding
+                "-tune",
+                "zerolatency",  # Added to reduce latency
+                "-",
+            ]
+
+            self.preview_process = subprocess.Popen(
+                command,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                bufsize=10**8,
+            )
+
+            # Log FFmpeg startup messages
+            stderr_thread = threading.Thread(
+                target=self._log_ffmpeg_output,
+                args=(self.preview_process.stderr,),
+                daemon=True,
+            )
+            stderr_thread.start()
+
+            self.preview_pipe = self.preview_process.stdout
+            logger.debug("FFmpeg process started successfully")
+
+        except Exception as e:
+            logger.error(f"Error starting FFmpeg process: {e}")
+            self.preview_process = None
+            self.preview_pipe = None
+
+    def _log_ffmpeg_output(self, stderr_pipe):
+        """Log FFmpeg error output for debugging."""
+        for line in stderr_pipe:
+            logger.debug(f"FFmpeg: {line.decode().strip()}")
 
     def _capture_preview(self):
-        """Continuously capture preview frames from the playing video."""
-        cap = cv2.VideoCapture(0)  # Open the first available camera
-
+        """Continuously capture preview frames using FFmpeg."""
         while True:
-            if self.is_playing:
-                ret, frame = cap.read()
-                if ret:
-                    _, jpeg = cv2.imencode(".jpg", frame)
-                    with self.preview_lock:
-                        self.preview_frame = jpeg.tobytes()
-            time.sleep(1 / 10)  # Lower frame rate to 10 FPS
+            if self.is_playing and self.preview_pipe:
+                try:
+                    # Read PNG signature
+                    signature = self.preview_pipe.read(8)
+                    if not signature:
+                        logger.debug("No PNG signature found, restarting FFmpeg")
+                        self._start_ffmpeg_process()
+                        continue
 
-    def get_preview_frame(self):
-        """Get the latest preview frame."""
-        with self.preview_lock:
-            return self.preview_frame
+                    if signature.startswith(b"\x89PNG"):
+                        # Read PNG chunks
+                        chunks = []
+                        chunks.append(signature)
+                        while True:
+                            chunk = self.preview_pipe.read(4096)
+                            if not chunk:
+                                break
+                            chunks.append(chunk)
+                            if b"IEND" in chunk:
+                                break
+
+                        if chunks:
+                            frame_data = b"".join(chunks)
+                            with self.preview_lock:
+                                self.preview_frame = frame_data
+                                self.frame_count += 1
+                                if self.frame_count % 5 == 0:  # Log every 5th frame
+                                    logger.debug(
+                                        f"Captured frame {self.frame_count}, size: {len(frame_data)} bytes"
+                                    )
+
+                except Exception as e:
+                    logger.error(f"Error reading preview frame: {e}")
+                    time.sleep(0.2)
+
+            else:
+                time.sleep(0.1)
+
+    async def generate_preview_stream(self):
+        """Generate preview frames for streaming."""
+        while True:
+            frame = self.get_preview_frame()
+            if frame is not None:
+                yield (
+                    b"--frame\r\n" b"Content-Type: image/png\r\n\r\n" + frame + b"\r\n"
+                )
+            await asyncio.sleep(0.1)  # Reduced sleep time for smoother preview
 
     def load_last_played(self):
         """Load and automatically play the last played video on startup."""
@@ -115,7 +202,9 @@ class VideoServer:
         self.player.set_media(media)
         self.player.play()
         self.current_video = video_name
+        self.current_video_path = video_path
         self.is_playing = True
+        self._start_ffmpeg_process()  # Start preview process
         self.save_last_played()
         return True
 
@@ -123,6 +212,11 @@ class VideoServer:
         """Stop the currently playing video."""
         self.player.stop()
         self.is_playing = False
+        if self.preview_process:
+            self.preview_process.terminate()
+            self.preview_process.wait()
+            self.preview_process = None
+            self.preview_pipe = None
 
     def delete_video(self, video_name: str) -> bool:
         """Delete a video from the video directory."""
@@ -134,6 +228,7 @@ class VideoServer:
         if self.current_video == video_name:
             self.stop_video()
             self.current_video = None
+            self.current_video_path = None
 
         try:
             video_path.unlink()
@@ -155,6 +250,23 @@ class VideoServer:
                 for f in self.video_dir.glob("*")
             ],
         }
+
+    def __del__(self):
+        """Cleanup on shutdown."""
+        if hasattr(self, "preview_process") and self.preview_process:
+            self.preview_process.terminate()
+            self.preview_process.wait()
+
+    def _restart_video(self, event):
+        """Restart the video when it ends."""
+        logger.info(f"Restarting video: {self.current_video}")
+        if self.current_video:
+            self.play_video(self.current_video)
+
+    def get_preview_frame(self):
+        """Get the latest preview frame."""
+        with self.preview_lock:
+            return self.preview_frame
 
 
 # FastAPI application
@@ -219,20 +331,12 @@ async def delete_video(video_name: str):
     )
 
 
-async def preview_stream():
-    """Generate preview frames for streaming."""
-    while True:
-        frame = video_server.get_preview_frame()
-        if frame is not None:
-            yield (b"--frame\r\n" b"Content-Type: image/jpeg\r\n\r\n" + frame + b"\r\n")
-        await asyncio.sleep(1 / 10)  # Lower frame rate to 10 FPS
-
-
 @app.get("/preview")
 async def get_preview():
     """Stream the video preview."""
     return StreamingResponse(
-        preview_stream(), media_type="multipart/x-mixed-replace; boundary=frame"
+        video_server.generate_preview_stream(),
+        media_type="multipart/x-mixed-replace; boundary=frame",
     )
 
 

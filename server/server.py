@@ -195,7 +195,7 @@ class VideoServer:
         while True:
             if self.is_playing:
                 try:
-                    self.player.video_take_snapshot(0, "temp_preview.png", 0, 0)
+                    self.player.video_take_snapshot(0, "temp_preview.png", 400, 300)
                     with open("temp_preview.png", "rb") as f:
                         img_data = f.read()
                     with self.preview_lock:

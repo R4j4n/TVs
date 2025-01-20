@@ -18,13 +18,13 @@ After=network.target
 
 Type=simple 
 
-WorkingDirectory=/home/snackmain/automation 
+WorkingDirectory=/home/usb1/automation 
 
-ExecStart=/home/snackmain/automation/venv/bin/python /home/snackmain/automation/tv.py 
+ExecStart=/home/usb1/automation/venv/bin/python /home/usb1/automation/tv.py 
 
 Restart=always 
 
-User=snackmain 
+User=usb1 
 
  
 

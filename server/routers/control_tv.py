@@ -248,6 +248,27 @@ class TVController:
                 print(f"Error loading schedule: {e}")
         return None
 
+    def get_tv_status(self) -> bool:
+        """
+        Query the TV power status using cec-client.
+        Returns True if TV is on, False if TV is off/standby.
+        """
+        try:
+            # Run cec-client command to get power status
+            result = os.popen('echo "pow 0" | cec-client -s -d 1').read()
+
+            # Parse the response
+            if "power status: on" in result.lower():
+                return True
+            elif "power status: standby" in result.lower():
+                return False
+            else:
+                print(f"Unexpected power status response: {result}")
+                return False
+        except Exception as e:
+            print(f"Error getting TV status: {e}")
+            return False
+
     def setup_routes(self):
         @self.router.post("/set_schedule")
         async def set_schedule(schedules: WeeklySchedule):
@@ -280,6 +301,14 @@ class TVController:
             return {
                 "turn_on_result": on_result == 0,
                 "turn_off_result": off_result == 0,
+            }
+
+        @self.router.get("/status")
+        async def get_tv_status():
+            is_on = self.get_tv_status()
+            return {
+                "status": "on" if is_on else "off",
+                "timestamp": datetime.now().isoformat(),
             }
 
 
