@@ -7,6 +7,7 @@ import { VideoControls } from "./VideoControls";
 import { VideoList } from "./VideoList";
 import { useStatus } from "@/hooks/useStatus";
 import Schedule from "./Schedule";
+import TVOnStatus from "./TVOnStatus";
 
 export function PiCard({ pi }) {
   const [uploading, setUploading] = useState(false);

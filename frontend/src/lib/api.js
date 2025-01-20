@@ -20,6 +20,12 @@ export async function pauseVideo(host) {
 }
 
 
+export async function isTVOn(host) {
+  const response = await fetch(`http://${host}:8000/tv/status`, { method: "POST" });
+  if (!response.ok) throw new Error("Failed to fetch the tv status.");
+}
+
+
 export async function resumeVideo(host) {
   const response = await fetch(`http://${host}:8000/resume`, { method: "POST" });
   if (!response.ok) throw new Error("Failed to resume video");
@@ -58,6 +64,11 @@ export async function uploadVideo(host, file) {
   });
   if (!response.ok) throw new Error("Failed to upload video");
 }
+
+
+
+
+
 
 export async function fetchPis(host) {
   const response = await fetch(`http://${host}:7777/pis`);
