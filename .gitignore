@@ -2,3 +2,4 @@ videos/
 __pycache__
 routers/__pycache__
 *.json
+venv
