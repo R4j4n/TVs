@@ -9,14 +9,21 @@ const TVOnStatus = ({ host }) => {
     const checkTVStatus = async (host) => {
         try { 
             const TVStatus = await isTVOn(host);
-            setTVOn(TVStatus);
+            console.log("The status received is: ", TVStatus)
+
+            if (TVStatus.status === "on"){
+                setTVOn(true);
+            }
+            else{
+                setTVOn(false);
+            }
         } catch (error) {
             console.log("Unable to check if tv is on or off: ", error)
         }
     }
     useEffect(() => {
       checkTVStatus(host)
-    }, )
+    },)
     
 
 

@@ -21,8 +21,9 @@ export async function pauseVideo(host) {
 
 
 export async function isTVOn(host) {
-  const response = await fetch(`http://${host}:8000/tv/status`, { method: "POST" });
+  const response = await fetch(`http://${host}:8000/tv/status`, { method: "GET" });
   if (!response.ok) throw new Error("Failed to fetch the tv status.");
+  return response.json()
 }
 
 

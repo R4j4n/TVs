@@ -62,38 +62,6 @@ class VideoServer:
 
         logger.info("VideoServer initialized successfully with looping enabled")
 
-    # class VideoServer:
-    #     def __init__(self, video_dir: str = "videos"):
-    #         self.video_dir = Path(video_dir)
-    #         self.compressed_dir = self.video_dir / "compressed"
-
-    #         # Create necessary directories
-    #         self.video_dir.mkdir(exist_ok=True)
-    #         self.compressed_dir.mkdir(exist_ok=True)
-
-    #         # Initialize VLC instance with loop option
-    #         self.vlc_instance = vlc.Instance(
-    #             "--input-repeat=-1"
-    #         )  # Set very high repeat count
-    #         self.player = self.vlc_instance.media_player_new()
-
-    #         # Server state
-    #         self.current_video: Optional[str] = None
-    #         self.current_video_path: Optional[Path] = None
-    #         self.is_playing: bool = False
-    #         self.is_paused: bool = False
-    #         self.last_played_file = Path("last_played.json")
-    #         self.last_position: int = 0
-    #         self.loop_enabled: bool = True  # Default to loop enabled
-
-    #         # Initialize video compressor
-    #         self.compressor = VideoCompressor(target_resolution=240, target_fps=10)
-
-    #         # Load last played video if exists
-    #         self.load_last_played()
-
-    #         logger.info("VideoServer initialized successfully with looping enabled")
-
     def get_compressed_path(self, video_name: str) -> Path:
         """Get the path for the compressed version of a video."""
         return self.compressed_dir / video_name.replace(".mp4", "_compressed.mp4")
