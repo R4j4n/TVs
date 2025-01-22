@@ -1,131 +1,209 @@
-import asyncio
-import io
+############### This is a copy of streaming api file it works fine ######################
+
 import json
 import logging
 import os
 import socket
-import tempfile
-import threading
-import time
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Optional
 
+import netifaces
 import uvicorn
 import vlc
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
-from PIL import Image
 from pydantic import BaseModel
+from zeroconf import ServiceInfo, Zeroconf
+
+# Configure logging with more detailed format
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+logger = logging.getLogger(__name__)
+
+from utils.ffmpeg_compressor import VideoCompressor
 
 from routers.control_tv import tv_controller
-
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 
 class VideoServer:
     def __init__(self, video_dir: str = "videos"):
         self.video_dir = Path(video_dir)
+        self.compressed_dir = self.video_dir / "compressed"
+
+        # Create necessary directories
         self.video_dir.mkdir(exist_ok=True)
+        self.compressed_dir.mkdir(exist_ok=True)
 
-        # Create a hidden temporary directory for preview captures
-        self.temp_dir = Path(tempfile.mkdtemp())
-        self.preview_path = self.temp_dir / ".preview.png"
+        # Initialize VLC instance
+        self.vlc_instance = vlc.Instance(
+            [
+                "--no-xlib",
+                "--quiet",
+                "--no-video-title-show",
+                "--vout",
+                "x11",
+            ]
+        )
 
-        # Initialize VLC instance with specific parameters
-        self.vlc_instance = vlc.Instance("--no-snapshot-preview --quiet --no-overlay")
-        self.player = self.vlc_instance.media_player_new()
+        # Initialize MediaListPlayer components
+        self.media_list = self.vlc_instance.media_list_new()
+        self.list_player = self.vlc_instance.media_list_player_new()
+        self.media_player = self.vlc_instance.media_player_new()
+        self.list_player.set_media_player(self.media_player)
 
         # Server state
         self.current_video: Optional[str] = None
+        self.current_video_path: Optional[Path] = None
         self.is_playing: bool = False
+        self.is_paused: bool = False
         self.last_played_file = Path("last_played.json")
+        self.last_position: int = 0
+        self.loop_enabled: bool = True  # Default to loop enabled
 
-        # Preview state
-        self.preview_frame = None
-        self.preview_lock = threading.Lock()
-        self.last_preview_time = 0
-        self.preview_interval = 1 / 30  # 30 FPS cap
+        # Set default playback mode to loop
+        self.list_player.set_playback_mode(vlc.PlaybackMode.loop)
 
-        # Start preview capture thread
-        self.preview_thread = threading.Thread(
-            target=self._capture_preview, daemon=True
-        )
-        self.preview_thread.start()
+        # Initialize video compressor
+        self.compressor = VideoCompressor(target_resolution=240, target_fps=10)
 
-        # Load last played video if exists
-        self.load_last_played()
+        # Load last played video if exists, but don't autoplay
+        self.load_last_played(autoplay=False)
 
-        # Attach event listener to handle loop playback
-        self.event_manager = self.player.event_manager()
-        self.event_manager.event_attach(
-            vlc.EventType.MediaPlayerEndReached, self._restart_video
-        )
+        logger.info("VideoServer initialized successfully with looping enabled")
 
-    def __del__(self):
-        """Cleanup temporary directory on shutdown."""
+    def play_video(self, video_name: str) -> bool:
+        """Play a video from the video directory with looping enabled."""
+        video_path = self.video_dir / video_name
+        if not video_path.exists():
+            logger.error(f"Video not found: {video_name}")
+            return False
+
         try:
-            if self.temp_dir.exists():
-                for file in self.temp_dir.iterdir():
-                    file.unlink()
-                self.temp_dir.rmdir()
+            # Clear existing media list
+            self.media_list.lock()
+            while self.media_list.count() > 0:
+                self.media_list.remove_index(0)
+
+            # Create and add new media
+            media = self.vlc_instance.media_new(str(video_path))
+            self.media_list.add_media(media)
+            media.release()
+            self.media_list.unlock()
+
+            # Set the media list and start playback
+            self.list_player.set_media_list(self.media_list)
+            self.list_player.play()
+
+            self.current_video = video_name
+            self.current_video_path = video_path
+            self.is_playing = True
+            self.is_paused = False
+            self.last_position = 0
+            self.save_last_played()
+
+            logger.info(f"Started playing video: {video_name}")
+            return True
+
         except Exception as e:
-            logger.error(f"Error cleaning up temporary directory: {e}")
+            logger.error(f"Error playing video {video_name}: {e}")
+            return False
 
-    def _restart_video(self, event):
-        """Restart the video when it ends."""
-        logger.info(f"Restarting video: {self.current_video}")
-        if self.current_video:
-            self.play_video(self.current_video)
+    def pause_video(self) -> bool:
+        """Pause the currently playing video."""
+        try:
+            if self.is_playing and not self.is_paused:
+                self.list_player.pause()
+                self.is_paused = True
+                self.last_position = self.media_player.get_time()
+                logger.info(
+                    f"Paused video: {self.current_video} at position {self.last_position}ms"
+                )
+                return True
+            return False
+        except Exception as e:
+            logger.error(f"Error pausing video: {e}")
+            return False
 
-    def _capture_preview(self):
-        """Continuously capture preview frames using a hidden temporary file."""
-        while True:
-            current_time = time.time()
+    def resume_video(self) -> bool:
+        """Resume the paused video."""
+        try:
+            if self.is_paused:
+                self.list_player.play()
+                self.is_paused = False
+                logger.info(f"Resumed video: {self.current_video}")
+                return True
+            return False
+        except Exception as e:
+            logger.error(f"Error resuming video: {e}")
+            return False
 
-            if (
-                self.is_playing
-                and (current_time - self.last_preview_time) >= self.preview_interval
-            ):
-                try:
-                    # Take snapshot to hidden file
-                    self.player.video_take_snapshot(0, str(self.preview_path), 0, 0)
+    def stop_video(self):
+        """Stop the currently playing video."""
+        try:
+            self.list_player.stop()
+            self.is_playing = False
+            self.is_paused = False
+            self.last_position = 0
+            logger.info(f"Stopped video: {self.current_video}")
+        except Exception as e:
+            logger.error(f"Error stopping video: {e}")
 
-                    # Quick check if file exists and has content
-                    if (
-                        self.preview_path.exists()
-                        and self.preview_path.stat().st_size > 0
-                    ):
-                        with open(self.preview_path, "rb") as f:
-                            frame_data = f.read()
+    def set_loop(self, enabled: bool) -> bool:
+        """Enable or disable video looping."""
+        try:
+            self.loop_enabled = enabled
+            mode = vlc.PlaybackMode.loop if enabled else vlc.PlaybackMode.default
+            self.list_player.set_playback_mode(mode)
+            logger.info(f"Video looping {'enabled' if enabled else 'disabled'}")
+            return True
+        except Exception as e:
+            logger.error(f"Error setting loop mode: {e}")
+            return False
 
-                        # Update preview frame
-                        with self.preview_lock:
-                            self.preview_frame = frame_data
+    def get_status(self) -> Dict:
+        """Get the current player status."""
+        try:
+            videos = list(self.video_dir.glob("*.mp4"))
+            current_position = (
+                self.media_player.get_time()
+                if (self.is_playing or self.is_paused)
+                else 0
+            )
+            return {
+                "current_video": self.current_video,
+                "is_playing": self.is_playing,
+                "is_paused": self.is_paused,
+                "is_looping": self.loop_enabled,
+                "current_position": current_position,
+                "available_videos": [f.name for f in videos],
+                "date_uploaded": [
+                    datetime.fromtimestamp(f.stat().st_mtime).strftime(
+                        "%I:%M %p %b %d %Y"
+                    )
+                    for f in videos
+                ],
+            }
+        except Exception as e:
+            logger.error(f"Error getting status: {e}")
+            return {}
 
-                        self.last_preview_time = current_time
-
-                except Exception as e:
-                    logger.error(f"Error capturing preview: {e}")
-
-            time.sleep(0.01)  # Small sleep to prevent CPU overuse
-
-    def get_preview_frame(self):
-        """Get the latest preview frame."""
-        with self.preview_lock:
-            return self.preview_frame
-
-    def load_last_played(self):
-        """Load and automatically play the last played video on startup."""
+    def load_last_played(self, autoplay: bool = False):
+        """Load the last played video, with option to autoplay."""
         try:
             if self.last_played_file.exists():
                 with open(self.last_played_file, "r") as f:
                     data = json.load(f)
                     if "last_video" in data:
-                        self.play_video(data["last_video"])
+                        if autoplay:
+                            self.play_video(data["last_video"])
+                        else:
+                            self.current_video = data["last_video"]
+                        logger.info(f"Loaded last played video: {data['last_video']}")
         except Exception as e:
             logger.error(f"Error loading last played video: {e}")
 
@@ -134,72 +212,28 @@ class VideoServer:
         try:
             with open(self.last_played_file, "w") as f:
                 json.dump({"last_video": self.current_video}, f)
+            logger.info(f"Saved last played video: {self.current_video}")
         except Exception as e:
             logger.error(f"Error saving last played video: {e}")
 
-    def play_video(self, video_name: str) -> bool:
-        """Play a video from the video directory."""
-        video_path = self.video_dir / video_name
-        if not video_path.exists():
-            return False
-
-        media = self.vlc_instance.media_new(str(video_path))
-        self.player.set_media(media)
-        self.player.play()
-        self.current_video = video_name
-        self.is_playing = True
-        self.save_last_played()
-        return True
-
-    def stop_video(self):
-        """Stop the currently playing video."""
-        self.player.stop()
-        self.is_playing = False
-
-    def delete_video(self, video_name: str) -> bool:
-        """Delete a video from the video directory."""
-        video_path = self.video_dir / video_name
-        if not video_path.exists():
-            return False
-
-        # Stop if this is the current video
-        if self.current_video == video_name:
-            self.stop_video()
-            self.current_video = None
-
-        try:
-            video_path.unlink()
-            return True
-        except Exception as e:
-            logger.error(f"Error deleting video: {e}")
-            return False
-
-    def get_status(self) -> Dict:
-        """Get the current player status."""
-        return {
-            "current_video": self.current_video,
-            "is_playing": self.is_playing,
-            "available_videos": [f.name for f in self.video_dir.glob("*")],
-            "date_uploaded": [
-                datetime.fromtimestamp(
-                    os.path.getmtime(os.path.join(self.video_dir, f.name))
-                ).strftime("%I:%M %p %b %d %Y")
-                for f in self.video_dir.glob("*")
-            ],
-        }
+    def __del__(self):
+        """Cleanup on shutdown."""
+        logger.info("Shutting down VideoServer")
+        self.stop_video()
 
 
-# FastAPI application
-app = FastAPI()
+# FastAPI application setup
+app = FastAPI(title="Video Server API", version="1.0.0")
 app.include_router(tv_controller.router, prefix="/tv", tags=["TV Schedule APIs"])
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, specify your client domain
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 video_server = VideoServer()
 
 
@@ -207,107 +241,164 @@ class PlayRequest(BaseModel):
     video_name: str
 
 
+class LoopRequest(BaseModel):
+    enabled: bool
+
+
 @app.post("/play")
 async def play_video(request: PlayRequest):
+    """Play a video by name."""
     success = video_server.play_video(request.video_name)
+    if not success:
+        raise HTTPException(status_code=404, detail="Video not found")
+    return {
+        "status": "success",
+        "message": f"Playing {request.video_name} in loop mode",
+    }
+
+
+@app.post("/pause")
+async def pause_video():
+    """Pause the currently playing video."""
+    if not video_server.current_video:
+        raise HTTPException(status_code=404, detail="No video is currently playing")
+    success = video_server.pause_video()
     if success:
-        return {"status": "success", "message": f"Playing {request.video_name}"}
-    return JSONResponse(
-        status_code=404, content={"status": "error", "message": "Video not found"}
+        return {"status": "success", "message": "Video paused"}
+    raise HTTPException(
+        status_code=400, detail="Video is not playing or already paused"
     )
+
+
+@app.post("/resume")
+async def resume_video():
+    """Resume the paused video."""
+    if not video_server.current_video:
+        raise HTTPException(status_code=404, detail="No video is currently loaded")
+    success = video_server.resume_video()
+    if success:
+        return {"status": "success", "message": "Video resumed"}
+    raise HTTPException(status_code=400, detail="Video is not paused")
+
+
+@app.post("/loop")
+async def set_loop(request: LoopRequest):
+    """Enable or disable video looping."""
+    success = video_server.set_loop(request.enabled)
+    if success:
+        return {
+            "status": "success",
+            "message": f"Video looping {'enabled' if request.enabled else 'disabled'}",
+        }
+    raise HTTPException(status_code=500, detail="Failed to set loop mode")
 
 
 @app.post("/stop")
 async def stop_video():
+    """Stop the currently playing video."""
     video_server.stop_video()
     return {"status": "success", "message": "Video stopped"}
 
 
 @app.get("/status")
 async def get_status():
+    """Get the current server status."""
     return video_server.get_status()
 
 
 @app.post("/upload")
 async def upload_video(file: UploadFile = File(...)):
+    """Upload a new video file."""
     try:
+        file_path = video_server.video_dir / file.filename
         contents = await file.read()
-        with open(video_server.video_dir / file.filename, "wb") as f:
+
+        with open(file_path, "wb") as f:
             f.write(contents)
+
+        logger.info(f"Successfully uploaded video: {file.filename}")
         return {"status": "success", "message": f"Uploaded {file.filename}"}
     except Exception as e:
-        return JSONResponse(
-            status_code=500, content={"status": "error", "message": str(e)}
-        )
+        logger.error(f"Error uploading video {file.filename}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.delete("/video/{video_name}")
 async def delete_video(video_name: str):
+    """Delete a video and its compressed version."""
     success = video_server.delete_video(video_name)
-    if success:
-        return {"status": "success", "message": f"Deleted {video_name}"}
-    return JSONResponse(
-        status_code=404, content={"status": "error", "message": "Video not found"}
-    )
-
-
-async def preview_stream():
-    """Generate preview frames for streaming."""
-    while True:
-        frame = video_server.get_preview_frame()
-        if frame is not None:
-            yield (b"--frame\r\n" b"Content-Type: image/png\r\n\r\n" + frame + b"\r\n")
-        await asyncio.sleep(1 / 30)  # Cap at 30 FPS
+    if not success:
+        raise HTTPException(status_code=404, detail="Video not found")
+    return {"status": "success", "message": f"Deleted {video_name}"}
 
 
 @app.get("/preview")
 async def get_preview():
-    """Stream the video preview."""
-    return StreamingResponse(
-        preview_stream(), media_type="multipart/x-mixed-replace; boundary=frame"
-    )
+    """Stream the compressed version of the currently playing video."""
+    if not video_server.is_playing or not video_server.current_video_path:
+        raise HTTPException(status_code=404, detail="No video is currently playing")
+
+    try:
+        compressed_path = video_server.get_compressed_path(video_server.current_video)
+
+        # Create compressed version if it doesn't exist
+        if not compressed_path.exists():
+            logger.info(f"Compressing video: {video_server.current_video}")
+            video_server.compressor.compress_video(
+                input_path=str(video_server.current_video_path),
+                output_path=str(compressed_path),
+            )
+            logger.info(f"Compression complete: {video_server.current_video}")
+
+        return StreamingResponse(
+            open(compressed_path, "rb"),
+            media_type="video/mp4",
+        )
+    except Exception as e:
+        logger.error(f"Error streaming preview: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
-import netifaces
-from zeroconf import ServiceInfo, Zeroconf
+def get_ip_address() -> str:
+    """Get the IP address of the first available network interface."""
+    try:
+        interfaces = [i for i in netifaces.interfaces() if i != "lo"]
+
+        for interface in interfaces:
+            addrs = netifaces.ifaddresses(interface)
+            if netifaces.AF_INET in addrs:
+                return addrs[netifaces.AF_INET][0]["addr"]
+
+        return "127.0.0.1"
+    except Exception as e:
+        logger.error(f"Error getting IP address: {e}")
+        return "127.0.0.1"
 
 
-def get_ip_address():
-    """Get the IP address of the first available network interface"""
-    interfaces = netifaces.interfaces()
+def register_service() -> Zeroconf:
+    """Register the video server service using Zeroconf."""
+    try:
+        ip = get_ip_address()
+        hostname = socket.gethostname()
 
-    # Remove the loopback interface
-    if "lo" in interfaces:
-        interfaces.remove("lo")
+        logger.info(f"Registering service with IP: {ip}")
 
-    for interface in interfaces:
-        addrs = netifaces.ifaddresses(interface)
-        if netifaces.AF_INET in addrs:
-            return addrs[netifaces.AF_INET][0]["addr"]
+        info = ServiceInfo(
+            "_pivideo._tcp.local.",
+            f"{hostname}._pivideo._tcp.local.",
+            addresses=[socket.inet_aton(ip)],
+            port=5000,
+            properties={"hostname": hostname},
+        )
 
-    # Fallback to localhost if no interface is found
-    return "127.0.0.1"
-
-
-def register_service():
-    ip = get_ip_address()
-    hostname = socket.gethostname()
-
-    print(f"Registering service with IP: {ip}")  # Debug print
-
-    info = ServiceInfo(
-        "_pivideo._tcp.local.",
-        f"{hostname}._pivideo._tcp.local.",
-        addresses=[socket.inet_aton(ip)],
-        port=5000,
-        properties={"hostname": hostname},
-    )
-
-    zeroconf = Zeroconf()
-    zeroconf.register_service(info)
-    return zeroconf
+        zeroconf = Zeroconf()
+        zeroconf.register_service(info)
+        return zeroconf
+    except Exception as e:
+        logger.error(f"Error registering service: {e}")
+        raise
 
 
 if __name__ == "__main__":
     zeroconf = register_service()
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run("streaming_api:app", host="0.0.0.0", port=8000, reload=False)
