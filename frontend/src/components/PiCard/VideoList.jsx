@@ -1,6 +1,6 @@
 import { Play, Pause, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { playVideo, deleteVideo, pauseVideo, resumeVideo } from "@/lib/api";
+import { playVideo, deleteVideo, pauseVideo } from "@/lib/api";
 import { useState } from "react";
 
 export function VideoList({
@@ -9,10 +9,10 @@ export function VideoList({
   uploaded_on,
   onAction,
   current_video,
-  isPlaying,
+  is_playing,
+  is_paused
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [videoToDelete, setVideoToDelete] = useState(null);
 
@@ -38,10 +38,19 @@ export function VideoList({
   const handleVideoPause = async () => {
     try {
       await pauseVideo(host);
-      setIsPaused(true);
       onAction();
     } catch (error) {
-      console.error("Unable to pause the video . . . . . ", error);
+      console.error("Unable to pause the video", error);
+    }
+  };
+
+  const handleVideoPlay = async (video) => {
+    try {
+      // Always play the new video, regardless of current state
+      await playVideo(host, video);
+      onAction();
+    } catch (error) {
+      console.error("Unable to play video", error);
     }
   };
 
@@ -77,11 +86,11 @@ export function VideoList({
                 <span className={"text-xs"}>Upload: {videoMap[video]}</span>
               </span>
               <div className="flex gap-2">
-                {video === current_video && isPlaying && !isPaused ? (
+                {video === current_video && is_playing && !is_paused ? (
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => handleVideoPause()}
+                    onClick={handleVideoPause}
                   >
                     <Pause className="h-4 w-4" />
                   </Button>
@@ -89,19 +98,7 @@ export function VideoList({
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={async () => {
-                      if (isPaused) {
-                        try {
-                          await resumeVideo(host);
-                        } catch (error) {
-                          await playVideo(host, video);
-                        }
-                      } else {
-                        await playVideo(host, video);
-                      }
-                      setIsPaused(false);
-                      onAction();
-                    }}
+                    onClick={() => handleVideoPlay(video)}
                   >
                     <Play className="h-4 w-4" />
                   </Button>

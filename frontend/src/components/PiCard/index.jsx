@@ -8,6 +8,7 @@ import { VideoList } from "./VideoList";
 import { useStatus } from "@/hooks/useStatus";
 import Schedule from "./Schedule";
 
+
 export function PiCard({ pi }) {
   const [uploading, setUploading] = useState(false);
   const { status, error, refreshStatus } = useStatus(pi.host);
@@ -19,7 +20,11 @@ export function PiCard({ pi }) {
       error={error}
       onRefresh={refreshStatus}
     >
-      <VideoPreview host={pi.host} isPlaying={status?.is_playing} />
+      <VideoPreview 
+        host={pi.host} 
+        isPlaying={status?.is_playing} 
+        isPaused={status?.is_paused} 
+      />
       <VideoControls
         host={pi.host}
         status={status}
@@ -33,8 +38,8 @@ export function PiCard({ pi }) {
         uploaded_on={status?.date_uploaded || []}
         onAction={refreshStatus}
         current_video={status?.current_video}
-        isPlaying={status?.is_playing}
-        
+        is_playing={status?.is_playing}
+        is_paused={status?.is_paused}       
       />
       <Schedule host={pi.host} />
     </CardWrapper>

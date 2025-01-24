@@ -22,8 +22,8 @@ export function VideoControls({
     try {
       await uploadVideo(host, file)
       onAction()
-      setShowMessage(true) // Show the popup message
-      setTimeout(() => setShowMessage(false), 3000) // Auto-hide the message after 3 seconds
+      setShowMessage(true)
+      setTimeout(() => setShowMessage(false), 3000) 
     } finally {
       setUploading(false)
       event.target.value = ''
@@ -33,9 +33,21 @@ export function VideoControls({
   return (
     <div className="flex flex-col gap-2">
       <div className="flex gap-2">
-        {status?.is_playing ? (
+        {status?.is_playing && !status?.is_paused ? (
           <Button 
             variant="destructive" 
+            onClick={async () => {
+              await stopVideo(host)
+              onAction()
+            }}
+            className="flex-1"
+          >
+            <Square className="h-4 w-4 mr-2" />
+            Stop
+          </Button>
+        ) : status?.is_paused ? (
+          <Button 
+            variant="default"
             onClick={async () => {
               await stopVideo(host)
               onAction()
@@ -80,7 +92,6 @@ export function VideoControls({
         />
       </div>
 
-      {/* Popup message */}
       {showMessage && (
         <div className="bg-emerald-600 text-white p-2 rounded shadow-md mt-2">
           File uploaded successfully!

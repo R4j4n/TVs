@@ -1,12 +1,12 @@
-export function VideoPreview({ host, isPlaying }) {
+export function VideoPreview({ host, isPlaying, isPaused }) {
   return (
     <div className="relative aspect-video bg-gray-100 rounded-lg overflow-hidden">
-      {isPlaying ? (
+      {isPlaying && !isPaused ? (
         <video
+          key={`${host}-preview`}
           src={`http://${host}:8000/preview`}
           autoPlay
           muted
-          loop
           className="w-full h-full object-cover"
         >
           Your browser does not support the video tag.
