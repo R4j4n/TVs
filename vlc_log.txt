@@ -1,0 +1,8 @@
+﻿-- logger module started --
+vdpau_avcodec error: Xlib is required for VDPAU
+vdpau_avcodec error: Xlib is required for VDPAU
+vdpau_avcodec error: Xlib is required for VDPAU
+vdpau_avcodec error: Xlib is required for VDPAU
+vdpau_avcodec error: Xlib is required for VDPAU
+vdpau_avcodec error: Xlib is required for VDPAU
+vdpau_avcodec error: Xlib is required for VDPAU
