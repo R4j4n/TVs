@@ -2,7 +2,7 @@
 
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useState, useEffect } from "react";
-import { deleteSchedule, getSchedule, loopVideo, saveSchedule } from "@/lib/api";
+import { deleteSchedule, getSchedule, saveSchedule } from "@/lib/api";
 
 const daysOfWeek = [
   "sunday",
@@ -14,11 +14,13 @@ const daysOfWeek = [
   "saturday",
 ];
 
-const Schedule = ({ host, isLooping }) => {
+const Schedule = ({ host }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [schedule, setSchedule] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [showToast, setShowToast] = useState(null); 
 
   useEffect(() => {
     async function fetchSchedule() {
@@ -45,34 +47,24 @@ const Schedule = ({ host, isLooping }) => {
   const handleSave = async () => {
     try {
       await saveSchedule(host, schedule);
-      console.log(schedule);
-      alert("Schedule saved successfully!");
+      setShowToast("Schedule saved successfully!"); 
+      setTimeout(() => setShowToast(null), 3000); 
     } catch (err) {
       console.error("Failed to save schedule:", err);
-      // alert("Failed to save schedule");
     }
   };
 
   const handleClear = async () => {
     try {
       await deleteSchedule(host);
-      console.log("Schedule removed successfully !!");
-      alert("Schedule cleared !!!");
+      setSchedule({}); // Clear schedule locally
+      setShowToast("Schedule cleared successfully!"); 
+      setTimeout(() => setShowToast(null), 3000);
+      setShowModal(false);
     } catch (err) {
       console.error("Failed to clear schedule:", err);
-      // alert("Failed to clear schedule");
     }
   };
-
-
-  const handleCheckboxChange = async () => {
-    try {
-      await loopVideo(host, !isLooping);
-
-    } catch (error) {
-      console.log("Failed to set loop. . . ", error)
-    }
-  }
 
   return (
     <div className="space-y-2">
@@ -90,19 +82,6 @@ const Schedule = ({ host, isLooping }) => {
 
       {isExpanded && (
         <div className="pt-4 space-y-4 text-center">
-          
-        <label className="flex items-center">
-        <input
-          type="checkbox"
-          checked={isLooping}
-              onChange={()=> handleCheckboxChange()}
-          className="mr-2"
-        />
-        <span className="font-semibold">Loop video</span>
-      </label>
-          
-          
-          
           <h1>TV on/off Schedule</h1>
           {loading ? (
             <p>Loading schedule...</p>
@@ -114,7 +93,9 @@ const Schedule = ({ host, isLooping }) => {
                 key={day}
                 className="flex items-center justify-start w-full gap-4 py-1"
               >
-                <p className="font-lg font-bold capitalize w-1/5 ">{day.slice(0,3)}: {" "} </p>
+                <p className="font-lg font-bold capitalize w-1/5 ">
+                  {day.slice(0, 3)}:{" "}
+                </p>
                 <div className="flex w-full items-center justify-center text-center gap-1 ">
                   <div className="">
                     <input
@@ -152,11 +133,44 @@ const Schedule = ({ host, isLooping }) => {
               Save Schedule
             </button>
             <button
-              onClick={handleClear}
+              onClick={() => setShowModal(true)}
               className="px-4 py-2 w-fit bg-gradient-to-b from-red-400 to-red-800 text-white rounded-md drop-shadow-lg hover:-translate-y-0.5 transition-all ease-in duration-400"
             >
               Clear Schedule
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {showToast && (
+        <div className="fixed bottom-4 right-4 bg-emerald-600 text-white px-4 py-2 rounded-lg shadow-lg">
+          {showToast}
+        </div>
+      )}
+
+      {/* Modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-rose-800 bg-opacity-30 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg">
+            <h2 className="text-lg font-semibold">Confirm Clear Schedule</h2>
+            <p className="text-sm text-gray-600 my-4">
+              Are you sure you want to clear the schedule?
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setShowModal(false)}
+                className="px-4 py-2 bg-gray-300 rounded-lg"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleClear}
+                className="px-4 py-2 bg-red-500 text-white rounded-lg"
+              >
+                Clear
+              </button>
+            </div>
           </div>
         </div>
       )}
