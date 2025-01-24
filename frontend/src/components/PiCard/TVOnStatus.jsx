@@ -20,7 +20,8 @@ const TVOnStatus = ({ host }) => {
         }
     }
     useEffect(() => {
-      checkTVStatus(host)
+        checkTVStatus(host);
+        setTimeout(() => {}, 1000);
     },)
     
 
