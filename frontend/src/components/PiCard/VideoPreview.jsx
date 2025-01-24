@@ -6,7 +6,6 @@ export function VideoPreview({ host, isPlaying }) {
           src={`http://${host}:8000/preview`}
           autoPlay
           muted
-          controls
           loop
           className="w-full h-full object-cover"
         >

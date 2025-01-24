@@ -13,20 +13,25 @@ export function VideoList({
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [videoToDelete, setVideoToDelete] = useState(null);
 
   const videoMap = videos.reduce((map, video, index) => {
     map[video] = uploaded_on[index];
     return map;
   }, {});
 
-  const handleDelete = async (videoName) => {
-    if (!confirm(`Are you sure you want to delete ${videoName}?`)) return;
+  const handleDelete = async () => {
+    if (!videoToDelete) return;
 
     try {
-      await deleteVideo(host, videoName);
+      await deleteVideo(host, videoToDelete);
       onAction();
     } catch (error) {
       console.error("Failed to delete video:", error);
+    } finally {
+      setShowModal(false);
+      setVideoToDelete(null);
     }
   };
 
@@ -68,9 +73,8 @@ export function VideoList({
               } rounded-lg`}
             >
               <span className="text-sm truncate flex-1">
-                {" "}
-                {video} <br />{" "}
-                <span className={"text-xs"}>Upload: {videoMap[video]}</span>{" "}
+                {video} <br />
+                <span className={"text-xs"}>Upload: {videoMap[video]}</span>
               </span>
               <div className="flex gap-2">
                 {video === current_video && isPlaying && !isPaused ? (
@@ -106,13 +110,36 @@ export function VideoList({
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => handleDelete(video)}
+                  onClick={() => {
+                    setVideoToDelete(video);
+                    setShowModal(true);
+                  }}
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-rose-900 bg-opacity-30 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-80">
+            <h2 className="text-lg font-semibold">Confirm Deletion</h2>
+            <p className="text-sm text-gray-600 my-4">
+              Are you sure you want to delete <b>{videoToDelete}</b>?
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setShowModal(false)}>
+                Cancel
+              </Button>
+              <Button variant="destructive" onClick={handleDelete}>
+                Delete
+              </Button>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -7,7 +7,6 @@ import { VideoControls } from "./VideoControls";
 import { VideoList } from "./VideoList";
 import { useStatus } from "@/hooks/useStatus";
 import Schedule from "./Schedule";
-import TVOnStatus from "./TVOnStatus";
 
 export function PiCard({ pi }) {
   const [uploading, setUploading] = useState(false);
@@ -37,7 +36,7 @@ export function PiCard({ pi }) {
         isPlaying={status?.is_playing}
         
       />
-      <Schedule host={pi.host} isLooping = {status?.is_looping} />
+      <Schedule host={pi.host} />
     </CardWrapper>
   );
 }
