@@ -8,7 +8,7 @@ export async function fetchPis(host) {
 // Individual pi API functions (Port 8000)
 
 export async function fetchPiStatus(host) {
-  const response = await fetch(`http://${host}:8000/status`);
+  const response = await fetch(`http://${host}:8000/status`, {method:"GET"});
   if (!response.ok) throw new Error("Failed to fetch status");
   return response.json();
 }
@@ -56,14 +56,14 @@ export async function deleteVideo(host, videoName) {
   if (!response.ok) throw new Error("Failed to delete video");
 }
 
-export async function loopVideo(host, loopEnable) {
-  const response = await fetch(`http://${host}:8000/loop`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ enabled: loopEnable }),
-  });
-  if (!response.ok) throw new Error("Failed to enable loop for video");
-}
+// export async function loopVideo(host, loopEnable) {
+//   const response = await fetch(`http://${host}:8000/loop`, {
+//     method: "POST",
+//     headers: { "Content-Type": "application/json" },
+//     body: JSON.stringify({ enabled: loopEnable }),
+//   });
+//   if (!response.ok) throw new Error("Failed to enable loop for video");
+// }
 
 // TV controls API functions (port 8000/tv/)
 export async function isTVOn(host) {
