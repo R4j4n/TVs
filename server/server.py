@@ -13,6 +13,7 @@ import netifaces
 import uvicorn
 import vlc
 from fastapi import BackgroundTasks, FastAPI, HTTPException, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
 
@@ -25,6 +26,7 @@ logger = logging.getLogger(__name__)
 from utils.ffmpeg_compressor import VideoCompressor
 from zeroconf import ServiceInfo, Zeroconf
 
+from routers.cec_list_hdmi import router_cec as cec_routers
 from routers.control_tv import tv_controller
 
 
@@ -274,7 +276,23 @@ class PlayRequest(BaseModel):
 
 
 app = FastAPI(title="Robust Video Looper API")
+
+origins = [
+    "http://localhost:3000",  # Replace with your frontend's address
+    "http://127.0.0.1:3000",  # If using localhost with a different port
+    "https://your-frontend-domain.com",  # Replace with production domain
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,  # List of allowed origins
+    allow_credentials=True,  # Allow cookies and credentials
+    allow_methods=["*"],  # Allow all HTTP methods
+    allow_headers=["*"],  # Allow all headers
+)
+
 app.include_router(tv_controller.router, prefix="/tv", tags=["TV Schedule APIs"])
+app.include_router(cec_routers, prefix="/tv", tags=["TV HDMI APIs"])
 
 
 @app.post("/upload")
