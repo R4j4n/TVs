@@ -22,11 +22,10 @@ def load_current_input():
         with open(INPUT_FILE, "r") as file:
             return json.load(file)["current_input"]
     except (FileNotFoundError, KeyError):
-        devices = controller.scan_devices()
-        try:
-            return devices.get("default_input", 1)
-        except Exception as e:
-            return 1
+        cached_data = cache.get()
+        if cached_data:
+            return cached_data.get("default_input", 0)
+        return 2
 
 
 def save_current_input(device_number):
@@ -58,7 +57,6 @@ async def rescan_devices():
 
 @router_cec.post("/switch/{device_number}")
 async def switch_input(device_number: int):
-    global current_input
     try:
         success = controller.switch_input(device_number)
         if not success:
@@ -72,6 +70,7 @@ async def switch_input(device_number: int):
 
 @router_cec.get("/current")
 async def get_current_input():
+    current_input = load_current_input()
     return {"current_input": current_input}
 
 
