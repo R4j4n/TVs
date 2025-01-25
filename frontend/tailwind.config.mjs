@@ -39,7 +39,10 @@ module.exports = {
 			DEFAULT: "hsl(var(--card))",
 			foreground: "hsl(var(--card-foreground))",
 		  },
-		},
+		  },
+		  backgroundImage: {
+        'banner': "url('/banner.jpg')", // Path relative to the public folder
+      },
 		borderRadius: {
 		  lg: "var(--radius)",
 		  md: "calc(var(--radius) - 2px)",
