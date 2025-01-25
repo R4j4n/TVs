@@ -21,8 +21,8 @@ const TVOnStatus = ({ host }) => {
     }
     useEffect(() => {
         checkTVStatus(host);
-        setTimeout(() => {}, 30000);
-    },)
+        // setTimeout(() => {}, 60000);
+    },[])
     
 
 

@@ -3,10 +3,9 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { RefreshCw } from 'lucide-react'
 import TVOnStatus from './TVOnStatus'
+import { useStatus } from '@/hooks/useStatus'
 
 export function CardWrapper({ pi, status, error, onRefresh, children }) {
-
-
   return (
     <Card className={`w-full drop-shadow-lg ${!status? 'bg-red-400/20': ''} hover:drop-shadow-xl `}>
       <CardHeader className="space-y-1">
@@ -18,7 +17,7 @@ export function CardWrapper({ pi, status, error, onRefresh, children }) {
           }<Button 
             variant="ghost" 
             size="icon"
-            onClick={onRefresh}
+            onClick={()=>onRefresh()}
             className="w-1/4"
           >
             <RefreshCw className="h-4 w-4" />

@@ -7,12 +7,13 @@ import { VideoControls } from "./VideoControls";
 import { VideoList } from "./VideoList";
 import { useStatus } from "@/hooks/useStatus";
 import Settings from "./Settings";
+import CurrentHDMI from "./currentHDMI";
 
 
 export function PiCard({ pi }) {
   const [uploading, setUploading] = useState(false);
   const { status, error, refreshStatus } = useStatus(pi.host);
-
+  
   return (
     <CardWrapper
       pi={pi}
@@ -20,17 +21,18 @@ export function PiCard({ pi }) {
       error={error}
       onRefresh={refreshStatus}
     >
-      <VideoPreview 
-        host={pi.host} 
-        isPlaying={status?.is_playing} 
-        isPaused={status?.is_paused} 
-      />
+      <CurrentHDMI/>
       <VideoControls
         host={pi.host}
         status={status}
         uploading={uploading}
         setUploading={setUploading}
         onAction={refreshStatus}
+      />
+      <VideoPreview 
+        host={pi.host} 
+        isPlaying={status?.is_playing} 
+        isPaused={status?.is_paused} 
       />
       <VideoList
         host={pi.host}
