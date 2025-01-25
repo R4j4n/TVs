@@ -6,7 +6,7 @@ import { VideoPreview } from "./VideoPreview";
 import { VideoControls } from "./VideoControls";
 import { VideoList } from "./VideoList";
 import { useStatus } from "@/hooks/useStatus";
-import Schedule from "./Schedule";
+import Settings from "./Settings";
 
 
 export function PiCard({ pi }) {
@@ -41,7 +41,7 @@ export function PiCard({ pi }) {
         is_playing={status?.is_playing}
         is_paused={status?.is_paused}       
       />
-      <Schedule host={pi.host} />
+      <Settings host={pi.host} />
     </CardWrapper>
   );
 }

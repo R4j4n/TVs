@@ -104,3 +104,52 @@ export async function deleteSchedule(host) {
     console.log("Failed to delete the schedule. . . .");
   }
 }
+
+// TV Devices control API functions
+export async function fetchAllDevices(host) {
+  try {
+    // TODO: remove _dummy from below while connected with tv
+    const response = await fetch(`http://${host}:8000/tv/devices_dummy`, { method: 'GET' });
+    if (!response.ok) throw new Error("Failed to fetch the devices");
+    return response.json();
+  } catch {
+    console.log("Failed to fetch the devices. . . .");
+  }
+}
+
+
+export async function getCurrentActiveDevice(host) {
+  try {
+    const response = await fetch(`http://${host}:8000/tv/current`, { method: 'GET' });
+    if (!response.ok) throw new Error("Failed to fetch the current device");
+    return response.json();
+  } catch {
+    console.log("Failed to fetch the current device. . . .");
+  }
+}
+
+
+export async function rescanDevices(host) {
+  const response = await fetch(`http://${host}:8000/tv/rescan`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+  });
+  if (!response.ok) throw new Error("Failed to rescan the devices.");
+}
+
+
+export async function switchDevice(host, new_device) {
+  const response = await fetch(`http://${host}:8000/tv/switch/${new_device}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(new_device),
+  });
+  if (!response.ok) throw new Error("Failed to switch to new device");
+}
+
+
+
+
+
+
+
