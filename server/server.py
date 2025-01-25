@@ -277,18 +277,12 @@ class PlayRequest(BaseModel):
 
 app = FastAPI(title="Robust Video Looper API")
 
-origins = [
-    "http://localhost:3000",  # Replace with your frontend's address
-    "http://127.0.0.1:3000",  # If using localhost with a different port
-    "https://your-frontend-domain.com",  # Replace with production domain
-]
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,  # List of allowed origins
-    allow_credentials=True,  # Allow cookies and credentials
-    allow_methods=["*"],  # Allow all HTTP methods
-    allow_headers=["*"],  # Allow all headers
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 app.include_router(tv_controller.router, prefix="/tv", tags=["TV Schedule APIs"])
