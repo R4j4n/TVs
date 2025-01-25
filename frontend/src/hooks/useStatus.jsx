@@ -17,7 +17,7 @@ export function useStatus(host) {
 
   useEffect(() => {
     refreshStatus()
-    const interval = setInterval(refreshStatus, 5000)
+    const interval = setInterval(refreshStatus, 30000)
     return () => clearInterval(interval)
   }, [host])
 
