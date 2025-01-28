@@ -3,7 +3,6 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { RefreshCw } from 'lucide-react'
 import TVOnStatus from './TVOnStatus'
-import { useStatus } from '@/hooks/useStatus'
 
 export function CardWrapper({ pi, status, error, onRefresh, children }) {
   return (

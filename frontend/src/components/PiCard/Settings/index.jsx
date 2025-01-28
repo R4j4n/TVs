@@ -5,7 +5,7 @@ import Schedule from "./Schedule";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import HDMIManager from "./HDMIManager";
 
-const Settings = ({ host }) => {
+const Settings = ({ host, status }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   return (
@@ -24,7 +24,9 @@ const Settings = ({ host }) => {
       {isExpanded && (
         <div>
           <HDMIManager host={host} />
-          <Schedule host={host} />
+          {status && (
+            <Schedule host={host} />
+          )}
         </div>
       )}
     </div>

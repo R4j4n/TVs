@@ -43,7 +43,7 @@ export function PiCard({ pi }) {
         is_playing={status?.is_playing}
         is_paused={status?.is_paused}       
       />
-      <Settings host={pi.host} />
+      <Settings host={pi.host} status={status} />
     </CardWrapper>
   );
 }
