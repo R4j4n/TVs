@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import Schedule from "./Schedule";
-import TVList from "./TVList";
 import { ChevronDown, ChevronUp } from "lucide-react";
+import HDMIManager from "./HDMIManager";
 
 const Settings = ({ host }) => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -23,7 +23,7 @@ const Settings = ({ host }) => {
       </div>
       {isExpanded && (
         <div>
-          <TVList/>
+          <HDMIManager host={host} />
           <Schedule host={host} />
         </div>
       )}

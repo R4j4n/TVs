@@ -106,17 +106,32 @@ export async function deleteSchedule(host) {
 }
 
 // TV Devices control API functions
-export async function fetchAllDevices(host) {
-  try {
-    // TODO: remove _dummy from below while connected with tv
-    const response = await fetch(`http://${host}:8000/tv/devices_dummy`, { method: 'GET' });
-    if (!response.ok) throw new Error("Failed to fetch the devices");
-    return response.json();
-  } catch {
-    console.log("Failed to fetch the devices. . . .");
-  }
+export async function check_json(host) {
+  const response = await fetch(`http://${host}:8000/tv/check_json`, {
+    method: "GET",
+  });
+  if (!response.ok) throw new Error("Failed to fetch if the json file exists.");
+  return response.json();
 }
 
+export async function set_hdmi_map(host, formData) {
+  const response = await fetch(`http://${host}:8000/tv/set_hdmi_map`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body:JSON.stringify(formData),
+  });
+  console.log("The response is: ", response.status);
+  if (!response.ok)
+    throw new Error("Failed to set the hdmi map.");
+}
+
+export async function fetch_hdmi_map(host) {
+  const response = await fetch(`http://${host}:8000/tv/fetch_hdmi_map`, {
+    method: "GET",
+  });
+  if (!response.ok) throw new Error("Failed to fetch the hdmi map.");
+  return response.json();
+}
 
 export async function getCurrentActiveDevice(host) {
   try {
@@ -129,12 +144,12 @@ export async function getCurrentActiveDevice(host) {
 }
 
 
-export async function rescanDevices(host) {
-  const response = await fetch(`http://${host}:8000/tv/rescan`, {
+export async function reset_hdmi_map(host) {
+  const response = await fetch(`http://${host}:8000/tv/reset`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
   });
-  if (!response.ok) throw new Error("Failed to rescan the devices.");
+  if (!response.ok) throw new Error("Failed to reset the hdmi map.");
 }
 
 
