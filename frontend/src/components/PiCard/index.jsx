@@ -8,17 +8,30 @@ import { VideoList } from "./VideoList";
 import { useStatus } from "@/hooks/useStatus";
 import Settings from "./Settings";
 import CurrentHDMI from "./currentHDMI";
+import { useEffect } from "react";
 
 
 export function PiCard({ pi }) {
   const [uploading, setUploading] = useState(false);
-  const { status, error, refreshStatus } = useStatus(pi.host);
+  const { status, error, tvStatus, refreshStatus } = useStatus(pi.host);
+  const [currentTVStatus, setCurrentTVStatus] = useState(false);
+
+  useEffect(() => {
+    if (tvStatus === "on") {
+      setCurrentTVStatus(true);
+    }
+    else {
+      setCurrentTVStatus(false);
+    }
+  }, [tvStatus])
   
+
   return (
     <CardWrapper
       pi={pi}
       status={status}
       error={error}
+      tvStatus={currentTVStatus}
       onRefresh={refreshStatus}
     >
       <CurrentHDMI/>
