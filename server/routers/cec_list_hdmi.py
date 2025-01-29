@@ -147,7 +147,7 @@ class CECController:
         try:
             device_hex = format(device_number * 16, "02x").upper()
             command = f'echo "tx 1F:82:{device_hex}:00" | cec-client -s -d 1'
-            # self._execute_cec_command(command)
+            self._execute_cec_command(command)
             self.logger.info(f"Switched to input {device_number}")
             return True
         except Exception as e:
@@ -212,7 +212,7 @@ async def set_hdmi_map(hdmi_map: Dict[str, str]):
                 with open(CURRENT_INPUT_FILE, "r") as f:
                     current_input = json.load(f)
             except json.JSONDecodeError:
-                pass  
+                pass
 
         # Update current_input if raspberry pi is found
         if raspberry_pi_port:
@@ -222,7 +222,7 @@ async def set_hdmi_map(hdmi_map: Dict[str, str]):
         with open(CURRENT_INPUT_FILE, "w") as f:
             json.dump(current_input, f, indent=2)
 
-        return Response(content="HDMI mapped Sucessfully",status_code=200)
+        return Response(content="HDMI mapped Sucessfully", status_code=200)
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error saving HDMI map: {str(e)}")
