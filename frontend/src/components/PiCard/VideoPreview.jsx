@@ -1,3 +1,5 @@
+// components/PiCard/VideoPreview.jsx
+
 "use client";
 
 import { useState } from "react";

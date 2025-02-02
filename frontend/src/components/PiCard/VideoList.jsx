@@ -1,3 +1,4 @@
+// components/PiCard/VideoList.jsx
 import { Play, Pause, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { playVideo, deleteVideo, pauseVideo } from "@/lib/api";
@@ -5,27 +6,33 @@ import { useState } from "react";
 
 export function VideoList({
   host,
-  videos,
-  uploaded_on,
+  videos = [],
+  uploaded_on = [],
   onAction,
   current_video,
   is_playing,
-  is_paused
+  is_paused,
+  isGroup = false
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [videoToDelete, setVideoToDelete] = useState(null);
 
-  const videoMap = videos.reduce((map, video, index) => {
-    map[video] = uploaded_on[index];
+  // Create video map only if both videos and uploaded_on are available
+  const videoMap = Array.isArray(videos) ? videos.reduce((map, video, index) => {
+    map[video] = uploaded_on[index] || 'Unknown date';
     return map;
-  }, {});
+  }, {}) : {};
 
   const handleDelete = async () => {
     if (!videoToDelete) return;
 
     try {
-      await deleteVideo(host, videoToDelete);
+      if (isGroup) {
+        // Implement group delete logic here
+      } else {
+        await deleteVideo(host, videoToDelete);
+      }
       onAction();
     } catch (error) {
       console.error("Failed to delete video:", error);
@@ -37,8 +44,12 @@ export function VideoList({
 
   const handleVideoPause = async () => {
     try {
-      await pauseVideo(host);
-      onAction();
+      if (isGroup) {
+        await onAction('pause');
+      } else {
+        await pauseVideo(host);
+        onAction();
+      }
     } catch (error) {
       console.error("Unable to pause the video", error);
     }
@@ -46,15 +57,19 @@ export function VideoList({
 
   const handleVideoPlay = async (video) => {
     try {
-      // Always play the new video, regardless of current state
-      await playVideo(host, video);
-      onAction();
+      if (isGroup) {
+        await onAction('play', video);
+      } else {
+        await playVideo(host, video);
+        onAction();
+      }
     } catch (error) {
       console.error("Unable to play video", error);
     }
   };
 
-  if (!videos.length) return null;
+  // If no videos are available, return null
+  if (!Array.isArray(videos) || videos.length === 0) return null;
 
   return (
     <div className="space-y-2">

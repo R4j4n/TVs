@@ -1,3 +1,5 @@
+// components/Dashboard.jsx
+
 "use client";
 
 import { Suspense, useState, useEffect } from "react";

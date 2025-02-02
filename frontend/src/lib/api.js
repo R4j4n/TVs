@@ -1,3 +1,5 @@
+// lib/api.js
+
 // Pis API functions (Port 7777)
 export async function fetchPis(host) {
   const response = await fetch(`http://${host}:7777/pis`);
@@ -13,14 +15,33 @@ export async function fetchPiStatus(host) {
   return response.json();
 }
 
+// lib/api.js
+
 export async function uploadVideo(host, file) {
   const formData = new FormData();
-  formData.append("file", file);
-  const response = await fetch(`http://${host}:8000/upload`, {
-    method: "POST",
-    body: formData,
-  });
-  if (!response.ok) throw new Error("Failed to upload video");
+  // Make sure we're using 'file' as the field name as expected by the server
+  formData.append('file', file, file.name);
+
+  try {
+    const response = await fetch(`http://${host}:8000/upload`, {
+      method: "POST",
+      // Don't set Content-Type header - browser will set it automatically with boundary
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Upload failed with status:', response.status);
+      console.error('Error details:', errorText);
+      throw new Error(`Failed to upload video: ${response.status} ${errorText}`);
+    }
+
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error('Upload error:', error);
+    throw error;
+  }
 }
 
 export async function playVideo(host, videoName) {

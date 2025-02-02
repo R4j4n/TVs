@@ -1,3 +1,5 @@
+// components/PiCard/TVOnStatus.jsx
+
 const TVOnStatus = ({ tvStatus }) => {
   return (
     <div className={`text-center w-full`}>

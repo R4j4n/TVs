@@ -1,3 +1,6 @@
+// components/PiCard/Settings/Schedule.jsx
+
+
 "use client";
 
 import { useState, useEffect } from "react";

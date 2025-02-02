@@ -1,3 +1,4 @@
+// components/PiCard/CardWrapper.jsx
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -6,10 +7,12 @@ import TVOnStatus from "./TVOnStatus";
 
 export function CardWrapper({
   pi,
+  title,
   status,
   error,
   tvStatus,
   onRefresh,
+  isGroup = false,
   children,
 }) {
   return (
@@ -20,8 +23,10 @@ export function CardWrapper({
     >
       <CardHeader className="space-y-1">
         <div className="flex items-center justify-between overflow-hidden">
-          <CardTitle className="w-1/2 text-xl font-bold">{pi.name} </CardTitle>
-          <TVOnStatus tvStatus={tvStatus} />
+          <CardTitle className="w-1/2 text-xl font-bold">
+            {isGroup ? title : pi?.name}
+          </CardTitle>
+          {!isGroup && <TVOnStatus tvStatus={tvStatus} />}
           {status ? (
             <div className="w-1/4 text-center text-slate-200 justify-end h-100% px-4 py-1 rounded-full bg-emerald-600 transition-all ease-in duration-[1] ">
               Active
@@ -31,14 +36,16 @@ export function CardWrapper({
               Inactive
             </div>
           )}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => onRefresh()}
-            className="w-1/4"
-          >
-            <RefreshCw className="h-4 w-4" />
-          </Button>
+          {onRefresh && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onRefresh()}
+              className="w-1/4"
+            >
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+          )}
         </div>
         {error && (
           <Alert variant="destructive">

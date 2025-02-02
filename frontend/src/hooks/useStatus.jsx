@@ -1,3 +1,5 @@
+// hooks/useStatus.jsx
+
 import { useState, useEffect } from "react";
 import { fetchPiStatus, isTVOn } from "@/lib/api";
 

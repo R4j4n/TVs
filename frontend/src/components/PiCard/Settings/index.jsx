@@ -1,3 +1,5 @@
+// components/PiCard/Settings/index.jsx
+
 "use client";
 
 import { useState } from "react";

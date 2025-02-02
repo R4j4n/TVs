@@ -1,3 +1,7 @@
+// components/PiCard/Settings/HDMIManager.jsx
+
+
+
 import React, { useState, useEffect } from "react";
 import { CheckCircle, XCircle, RefreshCw, Trash2 } from "lucide-react";
 import {

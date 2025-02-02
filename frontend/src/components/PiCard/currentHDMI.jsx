@@ -1,3 +1,5 @@
+// components/PiCard/currentHDMI.jsx
+
 "use client";
 
 import { getCurrentActiveDevice } from '@/lib/api';
