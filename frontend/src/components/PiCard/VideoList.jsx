@@ -12,13 +12,13 @@ export function VideoList({
   current_video,
   is_playing,
   is_paused,
-  isGroup = false
+  isGroup = false,
+  groupDevices = []
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [videoToDelete, setVideoToDelete] = useState(null);
 
-  // Create video map only if both videos and uploaded_on are available
   const videoMap = Array.isArray(videos) ? videos.reduce((map, video, index) => {
     map[video] = uploaded_on[index] || 'Unknown date';
     return map;
@@ -29,11 +29,11 @@ export function VideoList({
 
     try {
       if (isGroup) {
-        // Implement group delete logic here
+        await onAction('delete', videoToDelete); 
       } else {
         await deleteVideo(host, videoToDelete);
+        onAction();
       }
-      onAction();
     } catch (error) {
       console.error("Failed to delete video:", error);
     } finally {
@@ -45,7 +45,7 @@ export function VideoList({
   const handleVideoPause = async () => {
     try {
       if (isGroup) {
-        await onAction('pause');
+        await onAction('pause'); 
       } else {
         await pauseVideo(host);
         onAction();
@@ -58,7 +58,7 @@ export function VideoList({
   const handleVideoPlay = async (video) => {
     try {
       if (isGroup) {
-        await onAction('play', video);
+        await onAction('play', video); 
       } else {
         await playVideo(host, video);
         onAction();
@@ -68,22 +68,21 @@ export function VideoList({
     }
   };
 
-  // If no videos are available, return null
   if (!Array.isArray(videos) || videos.length === 0) return null;
 
   return (
     <div className="space-y-2">
-      <div
-        className="flex items-center justify-between cursor-pointer"
-        onClick={() => setIsExpanded((prev) => !prev)}
-      >
-        <p className="font-medium">Available Videos ({videos.length})</p>
-        {isExpanded ? (
-          <ChevronUp className="h-4 w-4" />
-        ) : (
-          <ChevronDown className="h-4 w-4" />
-        )}
-      </div>
+    <div
+    className="flex items-center justify-between cursor-pointer"
+    onClick={() => setIsExpanded((prev) => !prev)}
+  >
+    <p className="font-medium">Available Videos ({videos.length})</p>
+    {isExpanded ? (
+      <ChevronUp className="h-4 w-4" />
+    ) : (
+      <ChevronDown className="h-4 w-4" />
+    )}
+  </div>
 
       {isExpanded && (
         <div className="space-y-1">
@@ -135,7 +134,6 @@ export function VideoList({
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-rose-900 bg-opacity-30 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg shadow-lg w-80">

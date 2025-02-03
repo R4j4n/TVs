@@ -1,92 +1,88 @@
 // lib/groupUtils.js
 
-// Group structure in localStorage:
-// {
-//   groupId: {
-//     name: string,
-//     devices: Array<{name: string, host: string}>,
-//     createdAt: number
-//   }
-// }
+const API_BASE_URL = process.env.NEXT_PUBLIC_ACTIVE_SERVER_HOSTNAME;
 
-export function getGroups() {
-    const groups = localStorage.getItem('piGroups');
-    return groups ? JSON.parse(groups) : {};
-  }
-  
-  export function saveGroups(groups) {
-    localStorage.setItem('piGroups', JSON.stringify(groups));
-  }
-  
-  export function createGroup(name, devices) {
-    const groups = getGroups();
-    const groupId = `group_${Date.now()}`;
-    
-    groups[groupId] = {
-      name,
-      devices,
-      createdAt: Date.now()
-    };
-    
-    saveGroups(groups);
-    return groupId;
-  }
-  
-  export function updateGroup(groupId, updates) {
-    const groups = getGroups();
-    
-    if (groups[groupId]) {
-      groups[groupId] = {
-        ...groups[groupId],
-        ...updates
-      };
-      saveGroups(groups);
-      return true;
+export async function getGroups() {
+  try {
+    const response = await fetch(`http://${API_BASE_URL}:8000/groups`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch groups');
     }
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching groups:', error);
+    return {};
+  }
+}
+
+export async function createGroup(name, devices) {
+  try {
+    const response = await fetch(`http://${API_BASE_URL}:8000/groups`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ name, devices }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to create group');
+    }
+
+    const result = await response.json();
+    return result.id;
+  } catch (error) {
+    console.error('Error creating group:', error);
+    throw error;
+  }
+}
+
+export async function updateGroup(groupId, updates) {
+  try {
+    const response = await fetch(`http://${API_BASE_URL}:8000/groups/${groupId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(updates),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to update group');
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error updating group:', error);
     return false;
   }
-  
-  export function deleteGroup(groupId) {
-    const groups = getGroups();
-    
-    if (groups[groupId]) {
-      delete groups[groupId];
-      saveGroups(groups);
-      return true;
+}
+
+export async function deleteGroup(groupId) {
+  try {
+    const response = await fetch(`http://${API_BASE_URL}:8000/groups/${groupId}`, {
+      method: 'DELETE',
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to delete group');
     }
+
+    return true;
+  } catch (error) {
+    console.error('Error deleting group:', error);
     return false;
   }
-  
-  export function addDeviceToGroup(groupId, device) {
-    const groups = getGroups();
-    
-    if (groups[groupId]) {
-      const devices = groups[groupId].devices;
-      if (!devices.some(d => d.host === device.host)) {
-        devices.push(device);
-        saveGroups(groups);
-        return true;
-      }
-    }
-    return false;
-  }
-  
-  export function removeDeviceFromGroup(groupId, deviceHost) {
-    const groups = getGroups();
-    
-    if (groups[groupId]) {
-      groups[groupId].devices = groups[groupId].devices.filter(
-        d => d.host !== deviceHost
-      );
-      saveGroups(groups);
-      return true;
-    }
-    return false;
-  }
-  
-  export function isDeviceInAnyGroup(deviceHost) {
-    const groups = getGroups();
+}
+
+export async function isDeviceInAnyGroup(deviceHost) {
+  try {
+    const groups = await getGroups();
     return Object.values(groups).some(group => 
       group.devices.some(device => device.host === deviceHost)
     );
+  } catch (error) {
+    console.error('Error checking device group membership:', error);
+    return false;
   }
+}

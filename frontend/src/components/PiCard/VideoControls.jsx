@@ -1,5 +1,5 @@
 // components/PiCard/VideoControls.jsx
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Play, Square, Upload } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { playVideo, stopVideo, uploadVideo } from '@/lib/api'
@@ -14,10 +14,14 @@ export function VideoControls({
 }) {
   const [uploadError, setUploadError] = useState('');
   const [showMessage, setShowMessage] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
 
-  // Safely access status properties
-  const isPlaying = status?.is_playing ?? false;
-  const isPaused = status?.is_paused ?? false;
+  useEffect(() => {
+    setIsPlaying(status?.is_playing ?? false);
+    setIsPaused(status?.is_paused ?? false);
+  }, [status]);
+
   const availableVideos = status?.available_videos ?? [];
 
   const handleFileUpload = async (event) => {
@@ -26,31 +30,23 @@ export function VideoControls({
       setUploadError('No file selected');
       return;
     }
-
-    // Clear any previous errors
     setUploadError('');
-
-    // Check file size (example: limit to 500MB)
-    const maxSize = 500 * 1024 * 1024; // 500MB in bytes
+    const maxSize = 500 * 1024 * 1024;
     if (file.size > maxSize) {
       setUploadError('File size too large. Maximum size is 500MB.');
       return;
     }
 
-    // Check file type
     const validTypes = ['video/mp4', 'video/webm', 'video/ogg'];
     if (!validTypes.includes(file.type)) {
       setUploadError('Invalid file type. Please upload MP4, WebM, or OGG video files.');
       return;
     }
-
     setUploading(true);
     try {
       if (isGroup) {
-        console.log('Starting group upload for file:', file.name); // Debug log
         await onAction('upload', file);
       } else {
-        console.log('Starting single upload for file:', file.name); // Debug log
         await uploadVideo(host, file);
         onAction();
       }
@@ -61,80 +57,74 @@ export function VideoControls({
       setUploadError(err.message || 'Failed to upload video. Please try again.');
     } finally {
       setUploading(false);
-      // Reset the input
       event.target.value = '';
     }
   }
 
+  const handlePlay = async () => {
+    if (availableVideos[0]) {
+      await playVideo(host, availableVideos[0]);
+      setIsPlaying(true);
+      onAction();
+    }
+  }
+
+  const handleStop = async () => {
+    await stopVideo(host);
+    setIsPlaying(false);
+    setIsPaused(false);
+    onAction();
+  }
+
   return (
     <div className="flex flex-col gap-2">
-    <div className="flex gap-2">
-    {isPlaying && !isPaused ? (
-      <Button 
-        variant="destructive" 
-        onClick={async () => {
-          await stopVideo(host)
-          onAction()
-        }}
-        className="flex-1"
-      >
-        <Square className="h-4 w-4 mr-2" />
-        Stop
-      </Button>
-    ) : isPaused ? (
-      <Button 
-        variant="default"
-        onClick={async () => {
-          await stopVideo(host)
-          onAction()
-        }}
-        className="flex-1"
-      >
-        <Square className="h-4 w-4 mr-2" />
-        Stop
-      </Button>
-    ) : (
-      <Button
-        variant="default"
-        onClick={async () => {
-          if (availableVideos[0]) {
-            await playVideo(host, availableVideos[0])
-            onAction()
-          }
-        }}
-        disabled={availableVideos.length === 0}
-        className="flex-1"
-      >
-        <Play className="h-4 w-4 mr-2" />
-        Play
-      </Button>
-    )}
-    
-    <Button 
-      variant="outline" 
-      className="flex-1"
-      onClick={() => document.getElementById(`upload-${host}`)?.click()}
-      disabled={uploading}
-    >
-      <Upload className="h-4 w-4 mr-2" />
-      {uploading ? 'Uploading...' : 'Upload'}
-    </Button>
-    <input
-      type="file"
-      id={`upload-${host}`}
-      className="hidden"
-      accept="video/*"
-      onChange={handleFileUpload}
-    />
-  </div>
+      <div className="flex gap-2">
+        {isPlaying || isPaused ? (
+          <Button 
+            variant="destructive" 
+            onClick={handleStop}
+            className="flex-1"
+          >
+            <Square className="h-4 w-4 mr-2" />
+            Stop
+          </Button>
+        ) : (
+          <Button
+            variant="default"
+            onClick={handlePlay}
+            disabled={availableVideos.length === 0}
+            className="flex-1"
+          >
+            <Play className="h-4 w-4 mr-2" />
+            Play
+          </Button>
+        )}
+        
+        <Button 
+          variant="outline" 
+          className="flex-1"
+          onClick={() => document.getElementById(`upload-${host}`)?.click()}
+          disabled={uploading}
+        >
+          <Upload className="h-4 w-4 mr-2" />
+          {uploading ? 'Uploading...' : 'Upload'}
+        </Button>
+        <input
+          type="file"
+          id={`upload-${host}`}
+          className="hidden"
+          accept="video/*"
+          onChange={handleFileUpload}
+        />
+      </div>
 
-  {(showMessage || uploadError) && (
-    <div className={`${
-      uploadError ? 'bg-red-600' : 'bg-emerald-600'
-    } text-white p-2 rounded shadow-md mt-2`}>
-      {uploadError || 'File uploaded successfully!'}
-    </div>
-  )}
+      {(showMessage || uploadError) && (
+        <div className={`${
+          uploadError ? 'bg-red-600' : 'bg-emerald-600'
+        } text-white p-2 rounded shadow-md mt-2`}>
+          {uploadError || 'File uploaded successfully!'}
+        </div>
+      )}
     </div>
   )
 }

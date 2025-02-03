@@ -15,26 +15,47 @@ export function PiGrid() {
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("individual");
   const [selectedGroup, setSelectedGroup] = useState(null);
+  const [ungroupedPis, setUngroupedPis] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const updateUngroupedPis = async (currentPis) => {
+    try {
+      const filteredPis = [];
+      for (const pi of currentPis) {
+        const isInGroup = await isDeviceInAnyGroup(pi.host);
+        if (!isInGroup) {
+          filteredPis.push(pi);
+        }
+      }
+      setUngroupedPis(filteredPis);
+    } catch (error) {
+      console.error("Error filtering ungrouped Pis:", error);
+      setUngroupedPis(currentPis); // Show all Pis if there's an error
+    }
+    setLoading(false);
+  };
 
   useEffect(() => {
     async function loadPis() {
       try {
-        const result = await fetchPis(process.env.NEXT_PUBLIC_ACTIVE_SERVER_HOSTNAME);
-        setPis(Array.isArray(result) ? result : Object.values(result));
+        setLoading(true);
+        const result = await fetchPis(
+          process.env.NEXT_PUBLIC_ACTIVE_SERVER_HOSTNAME
+        );
+        const pisList = Array.isArray(result) ? result : Object.values(result);
+        setPis(pisList);
+        await updateUngroupedPis(pisList);
       } catch (err) {
-        console.error('Failed to fetch Pis:', err);
-        setError('Failed to load Pis');
+        console.error("Failed to fetch Pis:", err);
+        setError("Failed to load Pis");
+        setLoading(false);
       }
     }
 
     loadPis();
-    // Refresh every minute
     const interval = setInterval(loadPis, 60000);
     return () => clearInterval(interval);
   }, []);
-
-  // Get ungrouped devices
-  const ungroupedPis = pis.filter(pi => !isDeviceInAnyGroup(pi.host));
 
   if (error) {
     return (
@@ -42,6 +63,10 @@ export function PiGrid() {
         <AlertDescription>{error}</AlertDescription>
       </Alert>
     );
+  }
+
+  if (loading) {
+    return <div>Loading...</div>;
   }
 
   return (
@@ -58,9 +83,10 @@ export function PiGrid() {
               <PiCard key={pi.host} pi={pi} />
             ))}
           </div>
-          {ungroupedPis.length === 0 && (
+          {ungroupedPis.length === 0 && !loading && (
             <div className="text-center text-gray-500 py-8">
-              No individual devices available. All devices are currently in groups.
+              No individual devices available. All devices are currently in
+              groups.
             </div>
           )}
         </TabsContent>
@@ -81,7 +107,7 @@ export function PiGrid() {
               availablePis={pis}
               onSelectGroup={(group) => {
                 setSelectedGroup(group);
-                console.log('Selected group:', group); // For debugging
+                console.log("Selected group:", group);
               }}
             />
           )}

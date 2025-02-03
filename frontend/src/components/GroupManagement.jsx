@@ -1,25 +1,19 @@
 // components/GroupManagement.jsx
+
 import { useState, useEffect } from 'react';
 import { Plus, Trash2, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { EditGroupModal } from './EditGroupModal';
-import { 
-    getGroups, 
-    saveGroups, 
-    createGroup, 
-    deleteGroup, 
-    isDeviceInAnyGroup 
-  } from '@/lib/groupUtils';
-import * as GroupUtils from '@/lib/groupUtils';
+import { getGroups, createGroup, deleteGroup, isDeviceInAnyGroup } from '@/lib/groupUtils';
 
 export function CreateGroupModal({ availablePis, onClose, onGroupCreated }) {
   const [groupName, setGroupName] = useState('');
   const [selectedPis, setSelectedPis] = useState([]);
   const [error, setError] = useState('');
 
-  const handleCreateGroup = () => {
+  const handleCreateGroup = async () => {
     if (!groupName.trim()) {
       setError('Please enter a group name');
       return;
@@ -29,9 +23,13 @@ export function CreateGroupModal({ availablePis, onClose, onGroupCreated }) {
       return;
     }
 
-    const groupId = GroupUtils.createGroup(groupName, selectedPis);
-    onGroupCreated(groupId);
-    onClose();
+    try {
+      const groupId = await createGroup(groupName, selectedPis);
+      onGroupCreated();
+      onClose();
+    } catch (err) {
+      setError('Failed to create group: ' + err.message);
+    }
   };
 
   return (
@@ -89,7 +87,7 @@ export function CreateGroupModal({ availablePis, onClose, onGroupCreated }) {
   );
 }
 
-export function GroupCard({ group, onDelete, onEdit, onSelect }) {
+export function GroupCard({ group, groupId, onDelete, onEdit, onSelect }) {
   return (
     <Card className="hover:shadow-lg transition-shadow">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -123,7 +121,7 @@ export function GroupCard({ group, onDelete, onEdit, onSelect }) {
             variant="default"
             onClick={() => onSelect(group)}
           >
-            <span className="flex items-center justify-center">Control Group</span>
+            Control Group
           </Button>
         </div>
       </CardContent>
@@ -134,25 +132,57 @@ export function GroupCard({ group, onDelete, onEdit, onSelect }) {
 export function GroupsList({ availablePis, onSelectGroup }) {
   const [groups, setGroups] = useState({});
   const [showCreateModal, setShowCreateModal] = useState(false);
-    const [showEditModal, setShowEditModal] = useState(false);
-    const [editingGroup, setEditingGroup] = useState(null);
-    const [editingGroupId, setEditingGroupId] = useState(null);
-  const [selectedGroup, setSelectedGroup] = useState(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingGroup, setEditingGroup] = useState(null);
+  const [editingGroupId, setEditingGroupId] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const fetchGroups = async () => {
+    try {
+      setLoading(true);
+      const fetchedGroups = await getGroups();
+      setGroups(fetchedGroups);
+      setError(null);
+    } catch (err) {
+      setError('Failed to load groups');
+      console.error('Error loading groups:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    setGroups(GroupUtils.getGroups());
+    fetchGroups();
   }, []);
 
   const handleGroupCreated = () => {
-    setGroups(GroupUtils.getGroups());
+    fetchGroups();
   };
 
-  const handleDeleteGroup = (groupId) => {
+  const handleDeleteGroup = async (groupId) => {
     if (window.confirm('Are you sure you want to delete this group?')) {
-      GroupUtils.deleteGroup(groupId);
-      setGroups(GroupUtils.getGroups());
+      try {
+        await deleteGroup(groupId);
+        await fetchGroups(); // Refresh the groups list
+      } catch (error) {
+        console.error('Error deleting group:', error);
+        setError('Failed to delete group');
+      }
     }
   };
+
+  if (loading) {
+    return <div className="text-center py-4">Loading groups...</div>;
+  }
+
+  if (error) {
+    return (
+      <Alert variant="destructive" className="mb-4">
+        <AlertDescription>{error}</AlertDescription>
+      </Alert>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -164,21 +194,28 @@ export function GroupsList({ availablePis, onSelectGroup }) {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {Object.entries(groups).map(([groupId, group]) => (
-          <GroupCard
-            key={groupId}
-            group={group}
-            onDelete={() => handleDeleteGroup(groupId)}
-            onEdit={() => {
-              setEditingGroup(group);
-              setEditingGroupId(groupId);
-              setShowEditModal(true);
-            }}
-            onSelect={() => onSelectGroup(group)}
-          />
-        ))}
-      </div>
+      {Object.keys(groups).length === 0 ? (
+        <div className="text-center text-gray-500 py-8">
+          No groups created yet. Click "Create Group" to get started.
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Object.entries(groups).map(([groupId, group]) => (
+            <GroupCard
+              key={groupId}
+              group={group}
+              groupId={groupId}
+              onDelete={() => handleDeleteGroup(groupId)}
+              onEdit={() => {
+                setEditingGroup(group);
+                setEditingGroupId(groupId);
+                setShowEditModal(true);
+              }}
+              onSelect={() => onSelectGroup(group)}
+            />
+          ))}
+        </div>
+      )}
 
       {showEditModal && (
         <EditGroupModal

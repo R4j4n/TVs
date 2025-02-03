@@ -1,16 +1,16 @@
 // components/GroupControl.jsx
-
 import { useState, useEffect } from 'react';
 import { CardWrapper } from './PiCard/CardWrapper';
 import { VideoControls } from './PiCard/VideoControls';
 import { VideoList } from './PiCard/VideoList';
-import { fetchPiStatus, isTVOn, pauseVideo, playVideo, stopVideo, uploadVideo } from '@/lib/api';
+import { deleteVideo, fetchPiStatus, isTVOn, pauseVideo, playVideo, stopVideo, uploadVideo } from '@/lib/api';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export function GroupControl({ group }) {
   const [deviceStatuses, setDeviceStatuses] = useState({});
   const [error, setError] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [currentVideo, setCurrentVideo] = useState(null); 
 
   const fetchAllStatuses = async () => {
     try {
@@ -71,11 +71,20 @@ export function GroupControl({ group }) {
           await Promise.all(
             group.devices.map(device => playVideo(device.host, videoName))
           );
+          setCurrentVideo(videoName); 
           break;
         }
         case 'stop': {
           await Promise.all(
             group.devices.map(device => stopVideo(device.host))
+          );
+          setCurrentVideo(null); 
+          break;
+        }
+        case 'delete': {
+          const videoName = args[0];
+          await Promise.all(
+            group.devices.map(device => deleteVideo(device.host, videoName))
           );
           break;
         }
@@ -87,7 +96,7 @@ export function GroupControl({ group }) {
         }
         default:
           console.warn('Unknown action type:', actionType);
-          return;
+          return;        
       }
       await fetchAllStatuses();
       setError(null);
@@ -98,7 +107,6 @@ export function GroupControl({ group }) {
     }
   };
 
-  // Compute aggregate status
   const aggregateStatus = {
     isActive: Object.values(deviceStatuses).every(({ status }) => status),
     is_playing: Object.values(deviceStatuses).some(({ status }) => status?.is_playing),
@@ -141,10 +149,11 @@ export function GroupControl({ group }) {
         host={group.devices[0]?.host}
         videos={aggregateStatus.available_videos}
         uploaded_on={[]}
-        current_video={null}
+        current_video={currentVideo} // Update this line
         is_playing={aggregateStatus.is_playing}
         is_paused={aggregateStatus.is_paused}
         onAction={handleGroupAction}
+        groupDevices={group.devices}
       />
 
       <div className="mt-4">
