@@ -28,6 +28,7 @@ from zeroconf import ServiceInfo, Zeroconf
 
 from routers.cec_list_hdmi import router_cec as cec_routers
 from routers.control_tv import tv_controller
+from routers.group_management import router as group_router
 
 
 class PlayerState(str, Enum):
@@ -287,6 +288,7 @@ app.add_middleware(
 
 app.include_router(tv_controller.router, prefix="/tv", tags=["TV Schedule APIs"])
 app.include_router(cec_routers, prefix="/tv", tags=["TV HDMI APIs"])
+app.include_router(group_router, prefix="/groups", tags=["Groups"])
 
 
 @app.post("/upload")
