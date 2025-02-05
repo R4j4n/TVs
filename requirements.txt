@@ -9,3 +9,4 @@ python_vlc==3.0.21203
 schedule==1.2.2
 uvicorn==0.34.0
 zeroconf==0.140.1
+python-multipart

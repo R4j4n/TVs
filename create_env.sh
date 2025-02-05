@@ -21,6 +21,14 @@ else
     sudo apt update && sudo apt install -y ffmpeg
 fi
 
+
+if command_exists vlc; then
+    echo "VLC is already installed."
+else
+    echo "Installing VLC..."
+    sudo apt update && sudo apt install -y vlc
+fi
+
 # Create virtual environment
 echo "Creating virtual environment..."
 python3 -m venv venv
