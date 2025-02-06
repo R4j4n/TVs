@@ -24,7 +24,7 @@ const CurrentHDMI = () => {
     useEffect(() => {
         fetchCurrentDevice();
         // Periodic check for current device every 30 seconds
-        const intervalId = setInterval(fetchCurrentDevice, 30000);
+        const intervalId = setInterval(fetchCurrentDevice, 60000);
         // Cleanup interval on component unmount
         return () => clearInterval(intervalId);
       }, [host]);

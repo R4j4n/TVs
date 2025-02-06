@@ -15,7 +15,6 @@ export function PiGrid() {
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("individual");
   const [selectedGroup, setSelectedGroup] = useState(null);
-  const [ungroupedPis, setUngroupedPis] = useState([]);
   const [loading, setLoading] = useState(true);
 
 
@@ -37,8 +36,6 @@ export function PiGrid() {
     }
 
     loadPis();
-    const interval = setInterval(loadPis, 60000);
-    return () => clearInterval(interval);
   }, []);
 
   if (error) {
