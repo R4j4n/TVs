@@ -5,6 +5,7 @@ import { VideoControls } from './PiCard/VideoControls';
 import { VideoList } from './PiCard/VideoList';
 import { deleteVideo, fetchPiStatus, isTVOn, pauseVideo, playVideo, stopVideo, uploadVideo } from '@/lib/api';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { GroupHDMIStatus } from './GroupHDMIStatus';
 
 export function GroupControl({ group }) {
   const [deviceStatuses, setDeviceStatuses] = useState({});
@@ -156,6 +157,9 @@ export function GroupControl({ group }) {
         groupDevices={group.devices}
       />
 
+      <GroupHDMIStatus devices={group.devices} />
+        
+        
       <div className="mt-4">
           <h3 className="font-medium mb-2">Group Devices</h3>
           <div className="space-y-2">
