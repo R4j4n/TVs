@@ -18,22 +18,6 @@ export function PiGrid() {
   const [ungroupedPis, setUngroupedPis] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const updateUngroupedPis = async (currentPis) => {
-    try {
-      const filteredPis = [];
-      for (const pi of currentPis) {
-        const isInGroup = await isDeviceInAnyGroup(pi.host);
-        if (!isInGroup) {
-          filteredPis.push(pi);
-        }
-      }
-      setUngroupedPis(filteredPis);
-    } catch (error) {
-      console.error("Error filtering ungrouped Pis:", error);
-      setUngroupedPis(currentPis); // Show all Pis if there's an error
-    }
-    setLoading(false);
-  };
 
   useEffect(() => {
     async function loadPis() {
@@ -44,7 +28,7 @@ export function PiGrid() {
         );
         const pisList = Array.isArray(result) ? result : Object.values(result);
         setPis(pisList);
-        await updateUngroupedPis(pisList);
+        setLoading(false);
       } catch (err) {
         console.error("Failed to fetch Pis:", err);
         setError("Failed to load Pis");
@@ -79,16 +63,10 @@ export function PiGrid() {
 
         <TabsContent value="individual" className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {ungroupedPis.map((pi) => (
+            {pis.map((pi) => (
               <PiCard key={pi.host} pi={pi} />
             ))}
           </div>
-          {ungroupedPis.length === 0 && !loading && (
-            <div className="text-center text-gray-500 py-8">
-              No individual devices available. All devices are currently in
-              groups.
-            </div>
-          )}
         </TabsContent>
 
         <TabsContent value="groups">

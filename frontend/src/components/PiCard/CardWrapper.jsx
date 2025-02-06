@@ -26,7 +26,7 @@ export function CardWrapper({
           <CardTitle className="w-1/2 text-xl font-bold">
             {isGroup ? title : pi?.name}
           </CardTitle>
-          {!isGroup && <TVOnStatus tvStatus={tvStatus} />}
+          <TVOnStatus tvStatus={tvStatus} />
           {status ? (
             <div className="w-1/4 text-center text-slate-200 justify-end h-100% px-4 py-1 rounded-full bg-emerald-600 transition-all ease-in duration-[1] ">
               Active

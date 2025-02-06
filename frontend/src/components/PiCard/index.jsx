@@ -19,7 +19,7 @@ export function PiCard({ pi }) {
   const [currentTVStatus, setCurrentTVStatus] = useState(false);
 
   useEffect(() => {
-    if (tvStatus === "on") {
+    if (tvStatus?.status === "on") {
       setCurrentTVStatus(true);
     }
     else {
