@@ -1,0 +1,10 @@
+2025-02-09 12:51:37,895 - __main__ - INFO - VLC setup completed successfully
+2025-02-09 12:51:38,015 - __main__ - INFO - Registering service with IP: 192.168.50.152
+INFO:     Started server process [15560]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [15560]
