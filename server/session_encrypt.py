@@ -16,8 +16,8 @@ from fastapi.security import APIKeyHeader
 
 class PasswordManager:
     def __init__(self):
-        self.auth_file = Path("auth/auth.txt")
-        self.key_file = Path("auth/key.txt")
+        self.auth_file = Path("server/auth/auth.txt")
+        self.key_file = Path("server/auth/key.txt")
         self._initialize_key()
 
     def _initialize_key(self):

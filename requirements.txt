@@ -10,3 +10,4 @@ schedule==1.2.2
 uvicorn==0.34.0
 zeroconf==0.140.1
 python-multipart
+cryptography==44.0.1
