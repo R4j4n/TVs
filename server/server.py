@@ -119,7 +119,7 @@ def initialize_protected_routers(app: FastAPI, use: bool = False):
         protected_video_manager = protect_router(router_main)
         app.include_router(protected_video_manager, tags=["Main Video Controller"])
     else:
-        app.include_router(router_main, prefix="/groups", tags=["Groups"])
+        app.include_router(router_main, tags=["Main Video Controller"])
 
 
 initialize_protected_routers(app, use=False)
