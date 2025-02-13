@@ -8,45 +8,34 @@ if ! command -v sshpass &> /dev/null; then
     exit 1
 fi
 
-# Configuration
-# Format: "username hostname password"
-PIHOSTS=(
-    "testpi 10.0.0.156 YOUR_PASSWORD_1"
-    "testpi2 10.0.0.155 YOUR_PASSWORD_2"
-    # Add more Pis here in the same format
-)
+# Configuration - Add your Raspberry Pi details here
+USERNAME1="testpi"
+HOST1="10.0.0.156"
+PASS1="aero"
 
-# Git repository path on the Pis (modify this to match your setup)
+USERNAME2="testpi2"
+HOST2="10.0.0.155"
+PASS2="your_password_2"
+
+# Git repository path on the Pis
 GIT_PATH="~/TVs"
-
-# Function to check if SSH connection is successful
-check_ssh() {
-    local username=$1
-    local host=$2
-    local password=$3
-    
-    sshpass -p "$password" ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no "$username@$host" exit 2>/dev/null
-    return $?
-}
 
 # Function to update a single Pi
 update_pi() {
     local username=$1
     local host=$2
     local password=$3
-    local full_host="$username@$host"
     
-    echo "📡 Updating $full_host..."
+    echo "📡 Updating $username@$host..."
     
-    # Check SSH connection
-    if ! check_ssh "$username" "$host" "$password"; then
-        echo "❌ Failed to connect to $full_host"
-        return 1
-    }
-
-    # Execute commands on the remote Pi
-    sshpass -p "$password" ssh -o StrictHostKeyChecking=no "$full_host" "
-        cd $GIT_PATH || exit 1
+    # Try to connect and run commands
+    sshpass -p "$password" ssh -o StrictHostKeyChecking=no "$username@$host" "
+        cd $GIT_PATH
+        if [ \$? -ne 0 ]; then
+            echo '❌ Failed to change directory'
+            exit 1
+        fi
+        
         echo '📥 Pulling latest changes...'
         git pull
         if [ \$? -ne 0 ]; then
@@ -65,36 +54,40 @@ update_pi() {
     "
 
     if [ $? -eq 0 ]; then
-        echo "✅ Successfully updated $full_host"
+        echo "✅ Successfully updated $username@$host"
+        return 0
     else
-        echo "❌ Failed to update $full_host"
+        echo "❌ Failed to update $username@$host"
         return 1
     fi
 }
 
 # Main execution
 echo "🚀 Starting update process for all Raspberry Pis..."
-failed_hosts=()
+failed=0
 
-# Process each Pi
-for host_info in "${PIHOSTS[@]}"; do
-    # Split the host info into username, hostname, and password
-    read -r username hostname password <<< "$host_info"
-    
-    if ! update_pi "$username" "$hostname" "$password"; then
-        failed_hosts+=("$username@$hostname")
-    fi
-    echo "-----------------------------------"
-done
+# Update first Pi
+echo "Updating first Pi..."
+update_pi "$USERNAME1" "$HOST1" "$PASS1"
+if [ $? -ne 0 ]; then
+    failed=$((failed + 1))
+fi
+
+# Update second Pi
+echo "Updating second Pi..."
+update_pi "$USERNAME2" "$HOST2" "$PASS2"
+if [ $? -ne 0 ]; then
+    failed=$((failed + 1))
+fi
 
 # Report summary
 echo "📊 Update Summary:"
-echo "Total Pis: ${#PIHOSTS[@]}"
-echo "Successfully updated: $((${#PIHOSTS[@]} - ${#failed_hosts[@]}))"
+echo "Total Pis: 2"
+echo "Failed updates: $failed"
+echo "Successful updates: $((2 - failed))"
 
-if [ ${#failed_hosts[@]} -gt 0 ]; then
-    echo "❌ Failed updates (${#failed_hosts[@]}):"
-    printf '%s\n' "${failed_hosts[@]}"
+if [ $failed -gt 0 ]; then
+    echo "❌ Some updates failed!"
     exit 1
 else
     echo "✅ All updates completed successfully!"

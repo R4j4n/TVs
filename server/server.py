@@ -2,7 +2,6 @@ import uvicorn
 from fastapi import APIRouter, Depends, FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-
 from session_encrypt import session_manager
 from src.hdmi_controllers import CECController
 from src.routers.group_router import group_router
@@ -114,7 +113,7 @@ def initialize_protected_routers(app: FastAPI, use: bool = False):
         app.include_router(router_main, prefix="/groups", tags=["Groups"])
 
 
-initialize_protected_routers(app)
+initialize_protected_routers(app, use=True)
 
 
 app.add_middleware(

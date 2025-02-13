@@ -1,7 +1,3 @@
-#!/bin/bash
-
-# Script name: update_cmdline.sh
-
 CMDLINE_FILE="/boot/firmware/cmdline.txt"
 VIDEO_PARAM="video=HDMI-A-1:1920x1080@60"
 
