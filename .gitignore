@@ -4,3 +4,6 @@ routers/__pycache__
 *.json
 venv
 vlc_log.txt
+server/uploaded_videos/
+server/vlc_log.txt
+uploaded_videos
