@@ -14,7 +14,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-from utils.ffmpeg_compressor import VideoCompressor
+from src.video_compressor import VideoCompressor
 
 
 class PlayerState(str, Enum):

@@ -1,0 +1,8 @@
+cryptography==44.0.1
+fastapi==0.115.8
+netifaces==0.11.0
+pydantic==2.10.6
+python_vlc==3.0.21203
+schedule==1.2.2
+uvicorn==0.34.0
+zeroconf==0.144.1

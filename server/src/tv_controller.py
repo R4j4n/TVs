@@ -3,70 +3,61 @@ import os
 import threading
 import time
 from datetime import datetime
-from typing import Dict, Optional
+from typing import Optional
 
 import schedule
-from fastapi import APIRouter, FastAPI, HTTPException
-from pydantic import BaseModel
 
-# Define the schedule file for persistence
+from src.routers.tv_controller import DaySchedule, WeeklySchedule
+
 SCHEDULE_FILE = "schedule.json"
 
-
-class DaySchedule(BaseModel):
-    turn_on_time: Optional[str] = None  # Optional turn-on time
-    turn_off_time: Optional[str] = None  # Optional turn-off time
-
-
-class WeeklySchedule(BaseModel):
-    sunday: Optional[DaySchedule] = DaySchedule(
-        turn_on_time="09:30", turn_off_time="20:15"
-    )
-    monday: Optional[DaySchedule] = DaySchedule(
-        turn_on_time="09:30", turn_off_time="20:15"
-    )
-    tuesday: Optional[DaySchedule] = DaySchedule(
-        turn_on_time="09:30", turn_off_time="20:15"
-    )
-    wednesday: Optional[DaySchedule] = DaySchedule(
-        turn_on_time="09:30", turn_off_time="20:15"
-    )
-    thursday: Optional[DaySchedule] = DaySchedule(
-        turn_on_time="09:30", turn_off_time="20:15"
-    )
-    friday: Optional[DaySchedule] = DaySchedule(
-        turn_on_time="09:30", turn_off_time="22:15"
-    )
-    saturday: Optional[DaySchedule] = DaySchedule(
-        turn_on_time="09:30", turn_off_time="22:15"
-    )
+from src.hdmi_controllers import CECController
+from src.routers.inputs_switch import load_current_input
+from src.video_manager import video_manager
 
 
 class TVController:
     def __init__(self):
-        self.router = APIRouter()
         self.current_schedule = self.load_schedule() or WeeklySchedule()
         print(self.current_schedule)
-        self.setup_routes()
         self.start_scheduler()
         self.apply_schedule()
 
     def turn_on_tv(self):
+        switch_handler = CECController()
+        current_device = load_current_input()
         print(f"Turning on TV at {datetime.now()}")  # Debug log
         result = os.system('echo "on 0" | cec-client -s -d 1')
         print(f"TV turn on command result: {result}")  # Debug log
+
+        # Whenever TV is turned on, try to switch to the last used input
+        if current_device == 0:
+            print("No HDMI device mapp set.")
+        else:
+            try:
+                switch_handler.switch_input(device_number=current_device)
+            except Exception as e:
+                print(f"Cant switch to HDMI {current_device}")
+
+        # Play the last played content
+        video_manager.load_last_played()
         return result
 
     def turn_off_tv(self):
+
         print(f"Turning off TV at {datetime.now()}")  # Debug log
         result = os.system('echo "standby 0" | cec-client -s -d 1')
         print(f"TV turn off command result: {result}")  # Debug log
+
+        # stop the the item which is being currently played
+        video_manager.stop()
+
         return result
 
     def run_scheduler(self):
         while True:
             schedule.run_pending()
-            time.sleep(30)  # Check every 30 seconds instead of 1 second
+            time.sleep(30)  # Check every 30 seconds
 
     def start_scheduler(self):
         scheduler_thread = threading.Thread(target=self.run_scheduler, daemon=True)
@@ -117,10 +108,8 @@ class TVController:
         Returns True if TV is on, False if TV is off/standby.
         """
         try:
-            # Run cec-client command to get power status
             result = os.popen('echo "pow 0" | cec-client -s -d 1').read()
 
-            # Parse the response
             if "power status: on" in result.lower():
                 return True
             elif "power status: standby" in result.lower():
@@ -131,48 +120,3 @@ class TVController:
         except Exception as e:
             print(f"Error getting TV status: {e}")
             return False
-
-    def setup_routes(self):
-        @self.router.post("/set_schedule")
-        async def set_schedule(schedules: WeeklySchedule):
-            schedule_dict = schedules.model_dump()
-
-            for day, times in schedule_dict.items():
-                if times:
-                    self.schedule_day(day, DaySchedule(**times))
-
-            self.current_schedule = schedules
-            self.save_schedule()
-            return {"message": "Schedules set successfully", "schedule": schedule_dict}
-
-        @self.router.get("/get_schedule")
-        async def get_schedule():
-            return self.current_schedule.model_dump()
-
-        @self.router.delete("/clear_schedule")
-        async def clear_schedule():
-            schedule.clear()
-            self.current_schedule = WeeklySchedule()
-            self.save_schedule()
-            return {"message": "All schedules cleared successfully"}
-
-        @self.router.post("/test_tv")
-        async def test_tv_controls():
-            on_result = self.turn_on_tv()
-            time.sleep(5)  # Wait 5 seconds
-            off_result = self.turn_off_tv()
-            return {
-                "turn_on_result": on_result == 0,
-                "turn_off_result": off_result == 0,
-            }
-
-        @self.router.get("/status")
-        async def get_tv_status():
-            is_on = self.get_tv_status()
-            return {
-                "status": "on" if is_on else "off",
-                "timestamp": datetime.now().isoformat(),
-            }
-
-
-tv_controller = TVController()
