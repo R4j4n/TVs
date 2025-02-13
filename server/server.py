@@ -113,7 +113,7 @@ def initialize_protected_routers(app: FastAPI, use: bool = False):
         app.include_router(router_main, prefix="/groups", tags=["Groups"])
 
 
-initialize_protected_routers(app, use=True)
+initialize_protected_routers(app, use=False)
 
 
 app.add_middleware(
