@@ -19,6 +19,15 @@ from src.video_manager import PlayerState, logger, video_manager
 app = FastAPI()
 
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
 # Authentication dependency
 async def verify_token(x_token: str = Header(...)):
     if not session_manager.validate_session(x_token):
@@ -114,15 +123,6 @@ def initialize_protected_routers(app: FastAPI, use: bool = False):
 
 
 initialize_protected_routers(app, use=False)
-
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 
 if __name__ == "__main__":
