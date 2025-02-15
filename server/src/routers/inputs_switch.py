@@ -114,7 +114,7 @@ async def switch_input(device_number: int):
         save_current_input(device_number)
         return {"message": f"Successfully switched to input {device_number}"}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Can't switch HDMI. . . ")
 
 
 @router_cec.post("/reset")

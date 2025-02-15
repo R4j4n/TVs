@@ -29,10 +29,10 @@ app.add_middleware(
 
 
 # Authentication dependency
-async def verify_token(x_token: str = Header(...)):
-    if not session_manager.validate_session(x_token):
+async def verify_token(AUTH: str = Header(...)):
+    if not session_manager.validate_session(AUTH):
         raise HTTPException(status_code=401, detail="Invalid or expired session token")
-    return x_token
+    return AUTH
 
 
 # Pydantic models
