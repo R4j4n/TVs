@@ -105,12 +105,12 @@ def initialize_protected_routers(app: FastAPI, use: bool = False):
     else:
         app.include_router(router_cec, prefix="/tv", tags=["CEC commnads"])
 
-    # Protect group router
-    if use:
-        protected_group_router = protect_router(group_router)
-        app.include_router(protected_group_router, prefix="/groups", tags=["Groups"])
-    else:
-        app.include_router(group_router, prefix="/groups", tags=["Groups"])
+    # # Protect group router
+    # if use:
+    #     protected_group_router = protect_router(group_router)
+    #     app.include_router(protected_group_router, prefix="/groups", tags=["Groups"])
+    # else:
+    #     app.include_router(group_router, prefix="/groups", tags=["Groups"])
 
     # Protect main router
     initialize_router_video_manager(video_manager)
@@ -122,7 +122,7 @@ def initialize_protected_routers(app: FastAPI, use: bool = False):
         app.include_router(router_main, tags=["Main Video Controller"])
 
 
-initialize_protected_routers(app, use=False)
+initialize_protected_routers(app, use=True)
 
 
 if __name__ == "__main__":
