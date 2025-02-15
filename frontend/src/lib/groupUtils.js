@@ -4,7 +4,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_ACTIVE_SERVER_HOSTNAME;
 
 export async function getGroups() {
   try {
-    const response = await fetch(`http://${API_BASE_URL}:8000/groups`);
+    const response = await fetch(`http://${API_BASE_URL}:7777/groups`);
     if (!response.ok) {
       throw new Error('Failed to fetch groups');
     }
@@ -17,7 +17,7 @@ export async function getGroups() {
 
 export async function createGroup(name, devices) {
   try {
-    const response = await fetch(`http://${API_BASE_URL}:8000/groups`, {
+    const response = await fetch(`http://${API_BASE_URL}:7777/groups`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -39,7 +39,7 @@ export async function createGroup(name, devices) {
 
 export async function updateGroup(groupId, updates) {
   try {
-    const response = await fetch(`http://${API_BASE_URL}:8000/groups/${groupId}`, {
+    const response = await fetch(`http://${API_BASE_URL}:7777/groups/${groupId}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -60,7 +60,7 @@ export async function updateGroup(groupId, updates) {
 
 export async function deleteGroup(groupId) {
   try {
-    const response = await fetch(`http://${API_BASE_URL}:8000/groups/${groupId}`, {
+    const response = await fetch(`http://${API_BASE_URL}:7777/groups/${groupId}`, {
       method: 'DELETE',
     });
 
