@@ -90,7 +90,7 @@ export default function Dashboard() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="block mt-4 mx-auto px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200 disabled:opacity-50"
+                className="block mt-4 mx-auto px-10 py-3 bg-gradient-to-b  from-[#a60000] via-[#a60000] to-black  text-slate-100 font-semibold text-lg rounded-lg transition-all duration-[0.4s] shadow-md hover:scale-110 hover:shadow-xl"
               >
                 {isLoading ? "Logging in..." : "Login"}
               </button>
