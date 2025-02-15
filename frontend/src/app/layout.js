@@ -10,11 +10,12 @@ export const metadata = {
   description: "Control multiple Raspberry Pi video players",
 };
 
+{/* TODO: alternative background color to-[#1069ac]/50 */}
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body
-        className={`${inter.className} bg-gradient-to-b from-blue-100 to-pink-100 bg-fixed `}
+        className={`${inter.className} bg-gradient-to-b from-slate-400/40 to-[#520300]/40   bg-fixed `}
       >
         {children}
       </body>
