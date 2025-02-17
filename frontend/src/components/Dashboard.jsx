@@ -5,7 +5,7 @@ import { Suspense, useState, useEffect } from "react";
 import { PiGrid } from "./PiGrid";
 import { DashboardHeader } from "./DashboardHeader";
 import { Montserrat } from "next/font/google";
-import { auth_login } from "@/lib/api";
+import { auth_login, fetchPis } from "@/lib/api";
 import Image from "next/image";
 
 const montserrat = Montserrat({
@@ -18,13 +18,27 @@ export default function Dashboard() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [firstPi, setFirstPi] = useState(null);
+
+
+  const get_all_pis_list = async () => {
+    const all_pis = await fetchPis(process.env.NEXT_PUBLIC_ACTIVE_SERVER_HOSTNAME);
+      if ((all_pis.length) >0){
+        console.log("all pis: ", all_pis);
+        console.log("First pi:", all_pis[0]);
+        console.log("First pi hostname: ", all_pis[0].host);
+        setFirstPi(all_pis[0].host);
+      }
+  }
+
 
   useEffect(() => {
+    get_all_pis_list()
     const token = sessionStorage.getItem("authToken");
     if (token) {
       setIsAuthenticated(true);
     }
-  }, [isAuthenticated]);
+  }, []);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -32,7 +46,8 @@ export default function Dashboard() {
     setError("");
 
     try {
-      const login_response = await auth_login(process.env.NEXT_PUBLIC_ACTIVE_SERVER_HOSTNAME, password);
+      const login_response = await auth_login(firstPi, password); 
+      // TODO: Mistake! This should be the PI host
       if (login_response.ok) {
         const data = await login_response.json();
         sessionStorage.setItem("authToken", data.token);

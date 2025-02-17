@@ -88,8 +88,10 @@ class SessionManager:
         if not self.validate_password(password):
             raise HTTPException(status_code=401, detail="Invalid password")
 
-        # Generate session token
-        token = secrets.token_urlsafe(32)
+            # Load existing key and salt
+        with self.password_manager.key_file.open("rb") as f:
+            data = f.read().split(b".")
+            token = data[0]
         self.sessions[token] = datetime.now() + self.session_duration
         return token
 
