@@ -9,13 +9,13 @@ if ! command -v sshpass &> /dev/null; then
 fi
 
 # Configuration - Add your Raspberry Pi details here
-USERNAME1="testpi"
-HOST1="10.0.0.156"
-PASS1="aero"
+USERNAME1="snackshack1"
+HOST1="10.0.0.81"
+PASS1="r4j4n"
 
-USERNAME2="testpi2"
-HOST2="10.0.0.155"
-PASS2="your_password_2"
+USERNAME2="snackshackpromo"
+HOST2="10.0.0.157"
+PASS2="r4j4n"
 
 # Git repository path on the Pis
 GIT_PATH="~/TVs"
