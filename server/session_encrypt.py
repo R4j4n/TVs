@@ -1,24 +1,21 @@
 import base64
-import json
 import os
-import secrets
-from datetime import datetime, timedelta
-from functools import partial
 from pathlib import Path
 from typing import Optional
 
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-from fastapi import APIRouter, Depends, Header, HTTPException
-from fastapi.security import APIKeyHeader
+from fastapi import HTTPException
 
 
-class PasswordManager:
+class AuthManager:
     def __init__(self):
         self.auth_file = Path("server/auth/auth.txt")
         self.key_file = Path("server/auth/key.txt")
         self._initialize_key()
+        self.stored_password = None
+        self._load_password()
 
     def _initialize_key(self):
         """Initialize or load encryption key"""
@@ -43,75 +40,64 @@ class PasswordManager:
 
         self.fernet = Fernet(key)
 
-    def encrypt_password(self, password: str) -> bytes:
-        """Encrypt a password"""
-        return self.fernet.encrypt(password.encode())
-
-    def decrypt_password(self, encrypted_password: bytes) -> str:
-        """Decrypt a password"""
-        return self.fernet.decrypt(encrypted_password).decode()
-
-    def load_password(self) -> Optional[str]:
+    def _load_password(self):
         """Load encrypted password from auth.txt"""
         if not self.auth_file.exists():
-            return None
+            raise HTTPException(
+                status_code=500,
+                detail="No password set. Please create auth.txt with an encrypted password",
+            )
 
         try:
             with self.auth_file.open("rb") as f:
                 encrypted_password = f.read().strip()
-                print(encrypted_password)
-            return self.decrypt_password(encrypted_password)
+                self.stored_password = self.fernet.decrypt(encrypted_password).decode()
         except Exception as e:
             raise HTTPException(
                 status_code=500, detail=f"Failed to load password: {str(e)}"
             )
 
-
-# Session management
-class SessionManager:
-    def __init__(self):
-        self.password_manager = PasswordManager()
-        self.sessions = {}  # token -> expiry_time
-        self.session_duration = timedelta(hours=24)  # Sessions last 24 hours
+    def encrypt_password(self, password: str) -> bytes:
+        """Encrypt a password"""
+        return self.fernet.encrypt(password.encode())
 
     def validate_password(self, password: str) -> bool:
         """Validate password against stored encrypted password"""
-        stored_password = self.password_manager.load_password()
-        if not stored_password:
+        if not self.stored_password:
             raise HTTPException(
-                status_code=401, detail="No password has been set in auth.txt"
+                status_code=500, detail="No password has been set in auth.txt"
             )
-        return password == stored_password
+        return password == self.stored_password
 
-    def create_session(self, password: str) -> str:
-        """Create a new session if password matches"""
+    def get_api_key(self, password: str) -> str:
+        """Get API key if password matches"""
         if not self.validate_password(password):
             raise HTTPException(status_code=401, detail="Invalid password")
+        return self.stored_password  # Return the decrypted password as API key
 
-            # Load existing key and salt
-        with self.password_manager.key_file.open("rb") as f:
-            data = f.read().split(b".")
-            token = data[0]
-        self.sessions[token] = datetime.now() + self.session_duration
-        return token
-
-    def validate_session(self, token: str) -> bool:
-        """Check if session is valid and not expired"""
-        if token not in self.sessions:
-            return False
-
-        if datetime.now() > self.sessions[token]:
-            # Clean up expired session
-            del self.sessions[token]
-            return False
-
-        return True
-
-    def end_session(self, token: str) -> None:
-        """End a specific session"""
-        if token in self.sessions:
-            del self.sessions[token]
+    def verify_api_key(self, api_key: str) -> bool:
+        """Verify if the provided API key is valid"""
+        return api_key == self.stored_password
 
 
-# Create global session manager
-session_manager = SessionManager()
+# Utility function to set up initial password
+def setup_password(password: str, auth_file_path: str = "server/auth/auth.txt"):
+    """
+    Utility function to set up the initial encrypted password.
+    This should be run once to set up the authentication system.
+    """
+    auth_manager = AuthManager()
+    encrypted_password = auth_manager.encrypt_password(password)
+
+    # Ensure directory exists
+    Path(auth_file_path).parent.mkdir(parents=True, exist_ok=True)
+
+    # Save encrypted password
+    with open(auth_file_path, "wb") as f:
+        f.write(encrypted_password)
+
+    print("Password has been encrypted and saved successfully!")
+
+
+# Create global auth manager
+auth_manager = AuthManager()

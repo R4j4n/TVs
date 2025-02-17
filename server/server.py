@@ -2,7 +2,7 @@ import uvicorn
 from fastapi import APIRouter, Depends, FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from session_encrypt import session_manager
+from session_encrypt import auth_manager
 from src.hdmi_controllers import CECController
 from src.routers.group_router import group_router
 from src.routers.inputs_switch import initialize_router_cec_controller, router_cec
@@ -30,8 +30,8 @@ app.add_middleware(
 
 # Authentication dependency
 async def verify_token(AUTH: str = Header(...)):
-    if not session_manager.validate_session(AUTH):
-        raise HTTPException(status_code=401, detail="Invalid or expired session token")
+    if not auth_manager.verify_api_key(AUTH):
+        raise HTTPException(status_code=401, detail="Invalid API key")
     return AUTH
 
 
@@ -43,20 +43,9 @@ class Login(BaseModel):
 # Routes to add to your FastAPI app
 @app.post("/auth/login")
 async def login(request: Login):
-    """Login and get a session token"""
-    token = session_manager.create_session(request.password)
-    return {
-        "message": "Login successful",
-        "token": token,
-        "expires_in": str(session_manager.session_duration),
-    }
-
-
-@app.post("/auth/logout")
-async def logout(token: str = Depends(verify_token)):
-    """End the current session"""
-    session_manager.end_session(token)
-    return {"message": "Logged out successfully"}
+    """Login and get an API key"""
+    api_key = auth_manager.get_api_key(request.password)
+    return {"message": "Login successful", "token": api_key}
 
 
 # Router protection function
@@ -65,12 +54,9 @@ def protect_router(router: APIRouter) -> APIRouter:
     new_router = APIRouter()
 
     for route in router.routes:
-        # Get existing dependencies
         dependencies = list(route.dependencies)
-        # Add our auth dependency
         dependencies.append(Depends(verify_token))
 
-        # Copy the route with new dependencies
         new_router.add_api_route(
             path=route.path,
             endpoint=route.endpoint,
