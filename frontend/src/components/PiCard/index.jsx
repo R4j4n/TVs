@@ -9,13 +9,12 @@ import { VideoControls } from "./VideoControls";
 import { VideoList } from "./VideoList";
 import { useStatus } from "@/hooks/useStatus";
 import Settings from "./Settings";
-import CurrentHDMI from "./currentHDMI";
 import { useEffect } from "react";
 
 
 export function PiCard({ pi }) {
   const [uploading, setUploading] = useState(false);
-  const { status, error, tvStatus, refreshStatus } = useStatus(pi.host);
+  const { status, error, tvStatus, refreshStatus, currentActivePort } = useStatus(pi.host);
   const [currentTVStatus, setCurrentTVStatus] = useState(false);
 
   useEffect(() => {
@@ -36,7 +35,9 @@ export function PiCard({ pi }) {
       tvStatus={currentTVStatus}
       onRefresh={refreshStatus}
     >
-      <CurrentHDMI/>
+      <div>
+        <h3>Current Active Port: {currentActivePort}</h3>
+      </div>
       <VideoControls
         host={pi.host}
         status={status}

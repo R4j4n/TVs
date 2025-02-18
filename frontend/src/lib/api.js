@@ -116,6 +116,22 @@ export async function deleteVideo(host, videoName) {
   if (!response.ok) throw new Error("Failed to delete video");
 }
 
+export async function previewVideo(host) {
+  const auth_token = sessionStorage.getItem("authToken");
+  const response = await fetch(`http://${host}:8000/preview/`, {
+    method: "GET",
+    headers:{"AUTH":auth_token}
+  });
+  if (!response.ok) throw new Error("Failed to delete video");
+  return response;
+}
+
+
+
+
+
+
+
 // export async function loopVideo(host, loopEnable) {
 //   const response = await fetch(`http://${host}:8000/loop`, {
 //     method: "POST",

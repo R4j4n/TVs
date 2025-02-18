@@ -65,7 +65,7 @@ export function VideoControls({
     if (availableVideos[0]) {
       await playVideo(host, availableVideos[0]);
       setIsPlaying(true);
-      onAction();
+      onAction("play");
     }
   }
 
@@ -73,7 +73,7 @@ export function VideoControls({
     await stopVideo(host);
     setIsPlaying(false);
     setIsPaused(false);
-    onAction();
+    onAction("stop");
   }
 
   return (

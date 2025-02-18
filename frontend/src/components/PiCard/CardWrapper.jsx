@@ -22,20 +22,24 @@ export function CardWrapper({
       } hover:drop-shadow-xl `}
     >
       <CardHeader className="space-y-1">
-        <div className="flex items-center justify-between overflow-hidden">
+        <div className="flex flex-col items-center justify-between overflow-hidden">
           <CardTitle className="w-1/2 text-xl font-bold">
             {isGroup ? title : pi?.name}
           </CardTitle>
+          <div className="w-full flex justify-between items-center">
+            <div className="flex justify-start items-center w-[78%] pt-4">
+            
           <TVOnStatus tvStatus={tvStatus} />
           {status ? (
-            <div className="w-1/4 text-center text-slate-200 justify-end h-100% px-4 py-1 rounded-full bg-emerald-600 transition-all ease-in duration-[1] ">
+            <div className=" text-left text-slate-200 justify-end h-100% px-4 py-1 rounded-full bg-emerald-600 transition-all ease-in duration-[1] ">
               Active
             </div>
           ) : (
-            <div className="w-1/4 text-center text-slate-200 justify-end h-100% rounded-full px-4 py-1 bg-rose-600 transition-all ease-in duration-[1] ">
+            <div className=" text-left text-slate-200 justify-end h-100% rounded-full px-4 py-1 bg-rose-600 transition-all ease-in duration-[1] ">
               Inactive
             </div>
           )}
+          </div>
           {onRefresh && (
             <Button
               variant="ghost"
@@ -43,9 +47,10 @@ export function CardWrapper({
               onClick={() => onRefresh()}
               className="w-1/4"
             >
-              <RefreshCw className="h-4 w-4" />
+              <RefreshCw className="h-4 w-4 mt-4" />
             </Button>
           )}
+         </div> 
         </div>
         {error && (
           <Alert variant="destructive">

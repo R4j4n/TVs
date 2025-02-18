@@ -24,9 +24,6 @@ export default function Dashboard() {
   const get_all_pis_list = async () => {
     const all_pis = await fetchPis(process.env.NEXT_PUBLIC_ACTIVE_SERVER_HOSTNAME);
       if ((all_pis.length) >0){
-        console.log("all pis: ", all_pis);
-        console.log("First pi:", all_pis[0]);
-        console.log("First pi hostname: ", all_pis[0].host);
         setFirstPi(all_pis[0].host);
       }
   }

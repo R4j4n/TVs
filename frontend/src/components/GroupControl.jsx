@@ -77,7 +77,7 @@ export function GroupControl({ group }) {
         }
         case 'stop': {
           await Promise.all(
-            group.devices.map(device => stopVideo(device.host))
+            group.devices.map(device => {stopVideo(device.host); console.log("Stopping the video for: ", device.host);})
           );
           setCurrentVideo(null); 
           break;
@@ -92,6 +92,7 @@ export function GroupControl({ group }) {
         case 'pause': {
           await Promise.all(
             group.devices.map(device => pauseVideo(device.host))
+            
           );
           break;
         }
