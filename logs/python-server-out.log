@@ -1,6 +1,0 @@
-sunday=DaySchedule(turn_on_time='09:30', turn_off_time='20:15') monday=DaySchedule(turn_on_time='09:30', turn_off_time='20:15') tuesday=DaySchedule(turn_on_time='09:30', turn_off_time='20:15') wednesday=DaySchedule(turn_on_time='09:30', turn_off_time='20:15') thursday=DaySchedule(turn_on_time='11:21', turn_off_time='20:15') friday=DaySchedule(turn_on_time='09:30', turn_off_time='22:15') saturday=DaySchedule(turn_on_time='09:30', turn_off_time='22:15')
-INFO:     127.0.0.1:46592 - "GET / HTTP/1.1" 404 Not Found
-INFO:     127.0.0.1:46592 - "GET /favicon.ico HTTP/1.1" 404 Not Found
-INFO:     127.0.0.1:46598 - "GET /docs HTTP/1.1" 200 OK
-INFO:     127.0.0.1:46598 - "GET /openapi.json HTTP/1.1" 200 OK
-INFO:     127.0.0.1:57220 - "GET /videos HTTP/1.1" 200 OK
