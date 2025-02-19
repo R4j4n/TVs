@@ -12,24 +12,43 @@ app = FastAPI()
 app.include_router(get_all_pis_router, tags=["Client Router/ Get all PI's in network."])
 app.include_router(group_router, prefix="/groups", tags=["Groups"])
 
-# CORS configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # Change to specific domains in production
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["*"],  # Ensure OPTIONS is included
+    allow_headers=["*"],  # Allow all headers
 )
+
+
+@app.options("/{full_path:path}")
+async def preflight_handler():
+    return {"message": "CORS preflight successful"}
+
 
 # Create an HTTP client for forwarding requests
 http_client = httpx.AsyncClient()
 
 
-@app.api_route("/pi/{pi_host}/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
+@app.api_route(
+    "/pi/{pi_host}/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+)
 async def proxy_to_pi(request: Request, pi_host: str, path: str):
     """
     Proxy all requests to individual Pis through this endpoint
     """
+    # Handle OPTIONS requests for CORS preflight
+    if request.method == "OPTIONS":
+        return Response(
+            status_code=200,
+            headers={
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+                "Access-Control-Allow-Headers": "*",
+                "Access-Control-Max-Age": "3600",
+            },
+        )
+
     try:
         # Construct the target URL
         target_url = f"http://{pi_host}:8000/{path}"
