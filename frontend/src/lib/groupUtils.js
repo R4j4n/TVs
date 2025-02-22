@@ -1,20 +1,13 @@
 // lib/groupUtils.js
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_ACTIVE_SERVER_HOSTNAME;
-
-// Helper function to get the base URL
-function getBaseUrl() {
-  // If it's a complete URL (like from zrok), use it as is
-  if (API_BASE_URL.startsWith('http://') || API_BASE_URL.startsWith('https://')) {
-    return API_BASE_URL;
-  }
-  // For local development, add the protocol and port
-  return `http://${API_BASE_URL}:7777`;
-}
+import { getBaseUrl } from './api';  // Import getBaseUrl from api.js
 
 export async function getGroups() {
   try {
-    const response = await fetch(`${getBaseUrl()}/groups`);
+    const response = await fetch(`${getBaseUrl()}/groups`, {
+      headers: {
+        'skip_zrok_interstitial': '1'
+      }
+    });
     if (!response.ok) {
       throw new Error('Failed to fetch groups');
     }
@@ -31,6 +24,7 @@ export async function createGroup(name, devices) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'skip_zrok_interstitial': '1'
       },
       body: JSON.stringify({ name, devices }),
     });
@@ -53,6 +47,7 @@ export async function updateGroup(groupId, updates) {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
+        'skip_zrok_interstitial': '1'
       },
       body: JSON.stringify(updates),
     });
@@ -72,6 +67,9 @@ export async function deleteGroup(groupId) {
   try {
     const response = await fetch(`${getBaseUrl()}/groups/${groupId}`, {
       method: 'DELETE',
+      headers: {
+        'skip_zrok_interstitial': '1'
+      }
     });
 
     if (!response.ok) {

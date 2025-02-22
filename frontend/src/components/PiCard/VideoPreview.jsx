@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
+import { getBaseUrl } from "@/lib/api"; // Make sure to import getBaseUrl from your api.js
 
 export function VideoPreview({ host, isPlaying, isPaused, authKey }) {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -11,9 +12,11 @@ export function VideoPreview({ host, isPlaying, isPaused, authKey }) {
       const auth_token = sessionStorage.getItem("authToken");
       const setupVideoStream = async () => {
         try {
-          const response = await fetch(`http://${host}:8000/preview`, {
+          // Use getBaseUrl() to construct the URL
+          const response = await fetch(`${getBaseUrl()}/pi/${host}/preview`, {
             headers: {
-              'AUTH': auth_token
+              'AUTH': auth_token,
+              'skip_zrok_interstitial': '1'
             }
           });
 
@@ -37,6 +40,13 @@ export function VideoPreview({ host, isPlaying, isPaused, authKey }) {
       };
 
       setupVideoStream();
+
+      // Cleanup function
+      return () => {
+        if (videoUrl) {
+          URL.revokeObjectURL(videoUrl);
+        }
+      };
     }
   }, [host, isPlaying, isPaused, isExpanded, authKey]);
 

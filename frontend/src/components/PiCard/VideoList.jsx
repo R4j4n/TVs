@@ -1,5 +1,4 @@
-// components/PiCard/VideoList.jsx
-import { Play, Pause, Trash2, ChevronDown, ChevronUp } from "lucide-react";
+import { Play, Pause, Trash2, ChevronDown, ChevronUp, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { playVideo, deleteVideo, pauseVideo } from "@/lib/api";
 import { useState } from "react";
@@ -18,14 +17,32 @@ export function VideoList({
   const [isExpanded, setIsExpanded] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [videoToDelete, setVideoToDelete] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [actionLoading, setActionLoading] = useState({});
 
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <RefreshCw className="w-8 h-8 animate-spin text-emerald-600" />
+      </div>
+    );
+  }
+ 
+
+
+  // Simplified videoMap creation with debug logs
   const videoMap = Array.isArray(videos) ? videos.reduce((map, video, index) => {
-    map[video] = uploaded_on[index] || 'Unknown date';
+      map[video] = uploaded_on[index];
+      const date = uploaded_on[index];
+      map[video] = date;
     return map;
   }, {}) : {};
 
+
   const handleDelete = async () => {
     if (!videoToDelete) return;
+    setActionLoading({ [videoToDelete]: true });
 
     try {
       if (isGroup) {
@@ -39,10 +56,12 @@ export function VideoList({
     } finally {
       setShowModal(false);
       setVideoToDelete(null);
+      setActionLoading({});
     }
   };
 
   const handleVideoPause = async () => {
+    setActionLoading({ [current_video]: true });
     try {
       if (isGroup) {
         await onAction('pause'); 
@@ -52,10 +71,13 @@ export function VideoList({
       }
     } catch (error) {
       console.error("Unable to pause the video", error);
+    } finally {
+      setActionLoading({});
     }
   };
 
   const handleVideoPlay = async (video) => {
+    setActionLoading({ [video]: true });
     try {
       if (isGroup) {
         await onAction('play', video); 
@@ -65,6 +87,8 @@ export function VideoList({
       }
     } catch (error) {
       console.error("Unable to play video", error);
+    } finally {
+      setActionLoading({});
     }
   };
 
@@ -72,17 +96,17 @@ export function VideoList({
 
   return (
     <div className="space-y-2">
-    <div
-    className="flex items-center justify-between cursor-pointer"
-    onClick={() => setIsExpanded((prev) => !prev)}
-  >
-    <p className="font-medium">Available Videos ({videos.length})</p>
-    {isExpanded ? (
-      <ChevronUp className="h-4 w-4" />
-    ) : (
-      <ChevronDown className="h-4 w-4" />
-    )}
-  </div>
+      <div
+        className="flex items-center justify-between cursor-pointer"
+        onClick={() => setIsExpanded((prev) => !prev)}
+      >
+        <p className="font-medium">Available Videos ({videos.length})</p>
+        {isExpanded ? (
+          <ChevronUp className="h-4 w-4" />
+        ) : (
+          <ChevronDown className="h-4 w-4" />
+        )}
+      </div>
 
       {isExpanded && (
         <div className="space-y-1">
@@ -100,7 +124,15 @@ export function VideoList({
                 <span className={"text-xs"}>Upload: {videoMap[video]}</span>
               </span>
               <div className="flex gap-2">
-                {video === current_video && is_playing && !is_paused ? (
+                {actionLoading[video] ? (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    disabled
+                  >
+                    <RefreshCw className="h-4 w-4 animate-spin" />
+                  </Button>
+                ) : video === current_video && is_playing && !is_paused ? (
                   <Button
                     variant="ghost"
                     size="icon"
@@ -145,8 +177,16 @@ export function VideoList({
               <Button variant="outline" onClick={() => setShowModal(false)}>
                 Cancel
               </Button>
-              <Button variant="destructive" onClick={handleDelete}>
-                Delete
+              <Button 
+                variant="destructive" 
+                onClick={handleDelete}
+                disabled={actionLoading[videoToDelete]}
+              >
+                {actionLoading[videoToDelete] ? (
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                ) : (
+                  'Delete'
+                )}
               </Button>
             </div>
           </div>

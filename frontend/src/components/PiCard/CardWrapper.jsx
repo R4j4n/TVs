@@ -27,18 +27,19 @@ export function CardWrapper({
             {isGroup ? title : pi?.name}
           </CardTitle>
           <div className="w-full flex justify-between items-center">
-            <div className="flex justify-start items-center w-[78%] pt-4">
-            
-          <TVOnStatus tvStatus={tvStatus} />
+            <div className={`flex ${isGroup ? "justify-center w-full": "justify-start w-[78%]"} items-center mx-auto pt-4`}>
+          { !isGroup &&  <TVOnStatus tvStatus={tvStatus} /> }
           {status ? (
-            <div className=" text-left text-slate-200 justify-end h-100% px-4 py-1 rounded-full bg-emerald-600 transition-all ease-in duration-[1] ">
+            <div className= {`${ isGroup?"text-center": "text-left"} text-slate-200 justify-end h-100% px-4 py-1 rounded-full bg-emerald-600 transition-all ease-in duration-[1] `}>
               Active
             </div>
           ) : (
-            <div className=" text-left text-slate-200 justify-end h-100% rounded-full px-4 py-1 bg-rose-600 transition-all ease-in duration-[1] ">
+            <div className= {`${ isGroup?"text-center": "text-left"} text-slate-200 justify-end h-100% rounded-full px-4 py-1 bg-rose-600 transition-all ease-in duration-[1]`}>
               Inactive
             </div>
           )}
+
+          
           </div>
           {onRefresh && (
             <Button

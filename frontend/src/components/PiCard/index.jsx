@@ -25,7 +25,7 @@ export function PiCard({ pi }) {
       setCurrentTVStatus(false);
     }
   }, [tvStatus])
-  
+
 
   return (
     <CardWrapper

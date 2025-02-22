@@ -20,16 +20,25 @@ PASS2="r4j4n"
 # Git repository path on the Pis
 GIT_PATH="~/TVs"
 
+# Function to print section header
+print_header() {
+    echo "
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    🚀 $1
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+}
+
 # Function to update a single Pi
 update_pi() {
     local username=$1
     local host=$2
     local password=$3
     
-    echo "📡 Updating $username@$host..."
+    print_header "📡 Updating $username@$host"
     
     # Try to connect and run commands
     sshpass -p "$password" ssh -o StrictHostKeyChecking=no "$username@$host" "
+        # Navigate to repository
         cd $GIT_PATH
         if [ \$? -ne 0 ]; then
             echo '❌ Failed to change directory'
@@ -43,12 +52,16 @@ update_pi() {
             exit 1
         fi
 
-        echo '🔄 Restarting python-server PM2 instance...'
-        pm2 reload python-server
+        echo '🔄 Restarting python-server PM2 instance as root...'
+        # Ensure PM2 is using root's process list
+        sudo -H pm2 reload python-server --update-env
         if [ \$? -ne 0 ]; then
             echo '❌ PM2 reload failed'
             exit 1
         fi
+        
+        # Save PM2 process list for root
+        sudo -H pm2 save
         
         echo '✅ Update completed successfully'
     "
@@ -63,32 +76,35 @@ update_pi() {
 }
 
 # Main execution
-echo "🚀 Starting update process for all Raspberry Pis..."
+print_header "Starting update process for all Raspberry Pis"
 failed=0
 
 # Update first Pi
-echo "Updating first Pi..."
+echo "🔄 Updating first Pi..."
 update_pi "$USERNAME1" "$HOST1" "$PASS1"
 if [ $? -ne 0 ]; then
     failed=$((failed + 1))
 fi
 
 # Update second Pi
-echo "Updating second Pi..."
+echo "🔄 Updating second Pi..."
 update_pi "$USERNAME2" "$HOST2" "$PASS2"
 if [ $? -ne 0 ]; then
     failed=$((failed + 1))
 fi
 
 # Report summary
-echo "📊 Update Summary:"
-echo "Total Pis: 2"
-echo "Failed updates: $failed"
-echo "Successful updates: $((2 - failed))"
+print_header "📊 Update Summary"
+echo "📌 Total Pis: 2"
+echo "❌ Failed updates: $failed"
+echo "✅ Successful updates: $((2 - failed))"
 
 if [ $failed -gt 0 ]; then
     echo "❌ Some updates failed!"
     exit 1
 else
-    echo "✅ All updates completed successfully!"
+    echo "
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    🎉 All updates completed successfully! 
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 fi

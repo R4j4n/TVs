@@ -1,7 +1,7 @@
 // api.js
 
 // Helper function to get the base URL
-function getBaseUrl() {
+export function getBaseUrl() {
   const hostname = process.env.NEXT_PUBLIC_ACTIVE_SERVER_HOSTNAME;
   console.log("Base URL being used:", hostname);
   // Check if hostname is a complete URL (like from zrok)

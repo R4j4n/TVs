@@ -21,19 +21,23 @@ export default function Dashboard() {
   const [firstPi, setFirstPi] = useState(null);
 
 
-  const get_all_pis_list = async () => {
+  const get_all_pis_list = async (check_index=0) => {
     const all_pis = await fetchPis(process.env.NEXT_PUBLIC_ACTIVE_SERVER_HOSTNAME);
       if ((all_pis.length) >0){
-        setFirstPi(all_pis[0].host);
+        setFirstPi(all_pis[check_index].host);
       }
   }
 
 
   useEffect(() => {
-    get_all_pis_list()
-    const token = sessionStorage.getItem("authToken");
-    if (token) {
-      setIsAuthenticated(true);
+    try{
+      get_all_pis_list()
+      const token = sessionStorage.getItem("authToken");
+      if (token) {
+        setIsAuthenticated(true);
+      }
+    } catch(e){
+      get_all_pis_list(check_index=-1)
     }
   }, []);
 
