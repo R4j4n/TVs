@@ -6,4 +6,9 @@ venv
 vlc_log.txt
 server/uploaded_videos/
 server/vlc_log.txt
-uploaded_videos
+
+uploaded_videos/*
+!uploaded_videos/compressed/
+!uploaded_videos/.gitkeep
+uploaded_videos/compressed/*
+!uploaded_videos/compressed/.gitkeep
