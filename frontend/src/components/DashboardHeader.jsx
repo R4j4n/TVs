@@ -19,9 +19,15 @@ export function DashboardHeader() {
     <div
       className={`flex items-center justify-between pb-4 ${montserrat.className}`}
     >
+<<<<<<< Updated upstream
       <div className="flex w-fit">
       <Image src="/logo.jpeg" height={60} width={60} className="inline" alt="Logo" />
       <h1 className="text-3xl font-bold pl-4">AV Control Panel</h1>
+=======
+      <div className="flex items-center w-fit gap-x-4">
+        <Image src="/logo.png" height={80} width={80} alt="Logo" />
+        <h1 className="text-2xl font-bold">Aerosports TV control</h1>
+>>>>>>> Stashed changes
       </div>
       <Button onClick={() => router.refresh()}>
         <RefreshCw className="h-3 w-4 mr-2 justify-end" />
