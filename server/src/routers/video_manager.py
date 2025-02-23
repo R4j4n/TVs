@@ -65,7 +65,8 @@ async def upload_video(
             shutil.copyfileobj(original_file.file, buffer)
 
         # Save compressed file
-        compressed_path = video_manager.compressed_dir / compressed_file.filename
+        compressed_filename = compressed_file.filename.removeprefix("compressed_")
+        compressed_path = video_manager.compressed_dir / compressed_filename
         with compressed_path.open("wb") as buffer:
             shutil.copyfileobj(compressed_file.file, buffer)
 
