@@ -14,7 +14,10 @@ app.include_router(group_router, prefix="/groups", tags=["Groups"])
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Change to specific domains in production
+    allow_origins=[
+        "*",
+        "http://localhost:3000",
+    ],  # Change to specific domains in production
     allow_credentials=True,
     allow_methods=["*"],  # Ensure OPTIONS is included
     allow_headers=["*"],  # Allow all headers
@@ -26,8 +29,12 @@ async def preflight_handler():
     return {"message": "CORS preflight successful"}
 
 
-# Create an HTTP client for forwarding requests
-http_client = httpx.AsyncClient()
+http_client = httpx.AsyncClient(
+    timeout=httpx.Timeout(timeout=600.0),  # 10 minutes timeout
+    limits=httpx.Limits(
+        max_connections=100, max_keepalive_connections=20, keepalive_expiry=60.0
+    ),
+)
 
 
 @app.api_route(

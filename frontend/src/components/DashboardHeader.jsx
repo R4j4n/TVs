@@ -20,7 +20,7 @@ export function DashboardHeader() {
       className={`flex items-center justify-between pb-4 ${montserrat.className}`}
     >
       <div className="flex w-fit">
-      <Image src="/logo.jpeg" height={60} width={60} className="inline" alt="Logo" />
+      <Image src="/logo.png" height={60} width={60} className="inline" alt="Logo" />
       <h1 className="text-3xl font-bold pl-4">AV Control Panel</h1>
       </div>
       <Button onClick={() => router.refresh()}>

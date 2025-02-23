@@ -84,7 +84,7 @@ export default function Dashboard() {
             <div className="m-0 p-0 w-full h-full bg-pink-800/10 flex justify-start items-center">
             
           <div className="h-fit w-[85%] md:w-[35%] md:ml-10 px-10 backdrop-blur-lg bg-slate-100/10 brightness-75 rounded-xl drop-shadow-2xl items-center justify-center py-[10rem] text-center text-white">
-            <Image src="/logo.jpeg" width={150} height={100} className="m-auto pb-10 rounded-lg" alt="K1 Logo" />
+            <Image src="/logo.png" width={150} height={150} className="m-auto pb-10 rounded-lg" alt="K1 Logo" />
                 <h1
               className={`font-extrabold text-[2.2rem] pb-10 ${montserrat.className}`}
             >

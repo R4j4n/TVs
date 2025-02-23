@@ -41,7 +41,7 @@ module.exports = {
 		  },
 		  },
 		  backgroundImage: {
-        'banner': "url('https://images.pexels.com/photos/29283586/pexels-photo-29283586/free-photo-of-exciting-formula-1-race-at-interlagos-circuit.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2')", // Path relative to the public folder
+        'banner': "url('/bg.jpg')", // Path relative to the public folder
       },
 		borderRadius: {
 		  lg: "var(--radius)",

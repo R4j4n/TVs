@@ -75,7 +75,7 @@ export async function fetchPiStatus(host) {
   }
 }
 
-export async function uploadVideo(host, file) {
+export async function uploadVideo(host, file, onProgress = () => {}) {
   const auth_token = sessionStorage.getItem("authToken");
   const formData = new FormData();
   formData.append('file', file, file.name);
@@ -85,9 +85,11 @@ export async function uploadVideo(host, file) {
       method: "POST",
       headers: {
         "AUTH": auth_token,
-        'skip_zrok_interstitial': '1'
+        'skip_zrok_interstitial': '1',
       },
-      body: formData
+      body: formData,
+      // Add timeout of 10 minutes for large files
+      signal: AbortSignal.timeout(600000)
     });
 
     if (!response.ok) {
@@ -99,6 +101,9 @@ export async function uploadVideo(host, file) {
     const result = await response.json();
     return result;
   } catch (error) {
+    if (error.name === 'TimeoutError') {
+      throw new Error('Upload timed out. Please try again or use a smaller file.');
+    }
     console.error('Upload error:', error);
     throw error;
   }
