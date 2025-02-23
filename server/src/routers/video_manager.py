@@ -5,10 +5,16 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict
 
-from fastapi import APIRouter, BackgroundTasks, HTTPException, Response, UploadFile
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    File,
+    HTTPException,
+    Response,
+    UploadFile,
+)
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
-
 from src.video_manager import PlayerState
 
 # Store the controller reference
@@ -36,43 +42,54 @@ router_main = APIRouter(tags=["Video Controls"])
 
 
 @router_main.post("/upload")
-async def upload_video(file: UploadFile, background_tasks: BackgroundTasks):
-    """Upload and validate video file"""
-    if not file.filename:
-        raise HTTPException(400, "No file provided")
+async def upload_video(
+    original_file: UploadFile = File(...),
+    compressed_file: UploadFile = File(...),
+    background_tasks: BackgroundTasks = BackgroundTasks(),
+):
+    """Upload and validate both original and compressed video files"""
+    if not original_file.filename or not compressed_file.filename:
+        raise HTTPException(400, "Both files must be provided")
 
     allowed_extensions = {".mp4", ".avi", ".mkv", ".mov"}
-    file_ext = Path(file.filename).suffix.lower()
-    if file_ext not in allowed_extensions:
+    original_ext = Path(original_file.filename).suffix.lower()
+    if original_ext not in allowed_extensions:
         raise HTTPException(
             400, f"Unsupported file type. Allowed types: {allowed_extensions}"
         )
 
-    file_path = video_manager.upload_dir / file.filename
     try:
-        with file_path.open("wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
-    except Exception as e:
-        logger.error(f"Failed to save file: {e}")
-        raise HTTPException(500, f"Failed to save file: {str(e)}")
+        # Save original file
+        original_path = video_manager.upload_dir / original_file.filename
+        with original_path.open("wb") as buffer:
+            shutil.copyfileobj(original_file.file, buffer)
 
-    try:
-        video_manager.load_video(str(file_path))
+        # Save compressed file
+        compressed_path = video_manager.compressed_dir / compressed_file.filename
+        with compressed_path.open("wb") as buffer:
+            shutil.copyfileobj(compressed_file.file, buffer)
+
+        # Load the original video for playback
+        video_manager.load_video(str(original_path))
 
         # Add cleanup task
-        background_tasks.add_task(logger.info, f"Video uploaded: {file.filename}")
+        background_tasks.add_task(
+            logger.info, f"Videos uploaded: {original_file.filename}"
+        )
 
         return JSONResponse(
             {
-                "message": "Video uploaded and loaded successfully",
-                "filename": file.filename,
+                "message": "Videos uploaded and loaded successfully",
+                "original_filename": original_file.filename,
+                "compressed_filename": compressed_file.filename,
             }
         )
     except Exception as e:
-        logger.error(f"Failed to load video: {e}")
-        # Clean up failed upload
-        file_path.unlink(missing_ok=True)
-        raise HTTPException(500, f"Failed to load video: {str(e)}")
+        logger.error(f"Failed to process videos: {e}")
+        # Clean up failed uploads
+        original_path.unlink(missing_ok=True)
+        compressed_path.unlink(missing_ok=True)
+        raise HTTPException(500, f"Failed to process videos: {str(e)}")
 
 
 @router_main.post("/play")
